@@ -59,16 +59,16 @@ js = r"""
 const S = require(process.argv[1] + '/docs/stats.js');
 const r = require(process.argv[1] + '/data/derived/results.json');
 let worst = 0, n = 0;
+const ps = [], refs = [];
 for (const c of Object.values(r.cities)) {
-  const keys = Object.keys(c.seasons), ps = [];
-  for (const k of keys) {
+  for (const k of Object.keys(c.seasons)) {
     const s = c.seasons[k], a = S.analyse(s.years, s.values);
-    ps.push(a.p);
+    ps.push(a.p); refs.push(s.p_adj);
     for (const f of ['slope', 'ci_low', 'ci_high', 'p', 'mdt']) { worst = Math.max(worst, Math.abs(a[f] - s[f])); n++; }
   }
-  const adj = S.benjaminiHochberg(ps);
-  keys.forEach((k, i) => { worst = Math.max(worst, Math.abs(adj[i] - c.seasons[k].p_adj)); n++; });
 }
+const adj = S.benjaminiHochberg(ps);          // one family across all city-season tests
+adj.forEach((v, i) => { worst = Math.max(worst, Math.abs(v - refs[i])); n++; });
 console.log(JSON.stringify({n: n, worst: worst}));
 """
 try:

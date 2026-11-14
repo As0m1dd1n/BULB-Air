@@ -156,7 +156,12 @@ def centre_cell_daily(cut, centre, west_north, res=0.25):
 def analyse_city(dates, cut, status, first=None, last=None, half=BOX_HALF, daily=None):
     if daily is None:
         daily, _ = box_daily(cut, half)
-    rows = seasonal_table(dates, daily, status)
+    clim = None
+    if first is not None or last is not None:     # normal levels only from the years being tested
+        keep = np.array([(first is None or season_of(d)[1] >= first) and (last is None or season_of(d)[1] <= last)
+                         for d in dates])
+        clim = month_climatology([d for d, k in zip(dates, keep) if k], daily[keep])
+    rows = seasonal_table(dates, daily, status, clim)
     out = {}
     for s in SEASONS:
         rs = [r for r in rows if r["season"] == s and r["complete"]
@@ -279,6 +284,7 @@ def main():
                              min_years=MIN_YEARS, alpha=ALPHA),
                   season_names=SEASON_NAMES, cities={})
 
+    families = {}
     for city in cities:
         cut = cuts[city]
         full, rows, daily = analyse_city(dates, cut, status)
@@ -300,23 +306,7 @@ def main():
                                          ci_low_pct_decade=early[s].get("ci_low_pct_decade"),
                                          ci_high_pct_decade=early[s].get("ci_high_pct_decade"),
                                          mdt_pct_decade=early[s].get("mdt_pct_decade"), last_year=early[s]["last_year"])
-        for s in SEASONS:
-            full[s]["one_source"] = True
-            pub = PUBLISHED.get(city, {}).get(s)
-            if pub:
-                ours = same[s]
-                lo, hi = pub[0] - 2 * pub[1], pub[0] + 2 * pub[1]
-                overlap = (ours["ci_low"] <= hi) and (ours["ci_high"] >= lo)
-                same_sign = np.sign(ours["slope"]) == np.sign(pub[0])
-                full[s]["verdict"], full[s]["one_source"] = combined_verdict(
-                    full[s]["own_verdict"], pub, ours["own_verdict"])
-                full[s]["published"] = dict(slope=pub[0], pm=pub[1], significant=bool(abs(pub[0]) >= 2 * pub[1]),
-                                            ratio=(pub[0] / ours["slope"]) if ours["slope"] else None,
-                                            period="2005-2021", ours_same_period=ours["slope"],
-                                            ours_same_period_verdict=ours["own_verdict"],
-                                            ours_ci=[ours["ci_low"], ours["ci_high"]],
-                                            ours_p=ours["p"], same_sign=bool(same_sign),
-                                            intervals_overlap=bool(overlap))
+        families[city] = (full, same)
         # per-month climatology of coverage (share of days with a valid box mean)
         month_cov = []
         for m in range(1, 13):
@@ -345,6 +335,40 @@ def main():
             for r in rows:
                 w.writerow([r["season"], r["year"], "" if not np.isfinite(r["mean"]) else f"{r['mean']:.4f}",
                             r["valid_days"], r["days"], f"{r['coverage']:.3f}"])
+
+    # One family across every city and season: the Benjamini-Hochberg adjustment covers all
+    # city-season tests shown as verdicts, for the full record and for the study's period.
+    keys = [(c, s) for c in families for s in SEASONS]
+    for which in (0, 1):
+        adj = ts.benjamini_hochberg([families[c][which][s]["p"] for c, s in keys])
+        for (c, s), pa in zip(keys, adj):
+            r = families[c][which][s]
+            r["p_adj_city"] = r["p_adj"]
+            r["p_adj"] = float(pa)
+            r["own_verdict"] = r["verdict"] = verdict_for(r, pa)
+    result["family_size"] = len(keys)
+    for c, (full, same) in families.items():
+        for s in SEASONS:
+            full[s]["one_source"] = True
+            pub = PUBLISHED.get(c, {}).get(s)
+            if not pub:
+                continue
+            ours = same[s]
+            lo, hi = pub[0] - 2 * pub[1], pub[0] + 2 * pub[1]
+            full[s]["verdict"], full[s]["one_source"] = combined_verdict(full[s]["own_verdict"], pub, ours["own_verdict"])
+            # the paper does not say whether its +/- is one standard error or a 95 % range:
+            # the main rule (|trend| >= 2 x +/-) is the strict reading; this is the lenient one
+            alt_verdict, _ = combined_verdict(full[s]["own_verdict"], (pub[0], pub[1] / 2), ours["own_verdict"])
+            full[s]["published"] = dict(slope=pub[0], pm=pub[1], significant=bool(abs(pub[0]) >= 2 * pub[1]),
+                                        significant_if_pm_is_95=bool(abs(pub[0]) >= pub[1]),
+                                        verdict_if_pm_is_95=alt_verdict,
+                                        ratio=(pub[0] / ours["slope"]) if ours["slope"] else None,
+                                        period="2005-2021", ours_same_period=ours["slope"],
+                                        ours_same_period_verdict=ours["own_verdict"],
+                                        ours_ci=[ours["ci_low"], ours["ci_high"]],
+                                        ours_p=ours["p"], ours_p_adj=ours["p_adj"],
+                                        same_sign=bool(np.sign(ours["slope"]) == np.sign(pub[0])),
+                                        intervals_overlap=bool((ours["ci_low"] <= hi) and (ours["ci_high"] >= lo)))
 
     with open(os.path.join(OUT, "results.json"), "w") as f:
         json.dump(clean(result), f, indent=1)

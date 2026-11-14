@@ -202,7 +202,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     <div class="panel scroll">
       <table id="compare"></table>
     </div>
-    <p class="small muted">All trends in this table are in 10¹⁵ molecules per cm² per year. "Clear" means significant at the 5% level. The ratio is shown only where both find a clear trend in the same years. Published values: Sharma et al. (2023), <i>Environmental Science: Atmospheres</i> 3, 905–918, supplementary Table S2, November 2004 to March 2021. The paper does not say whether its ± is one or two standard errors, so we call a published trend clear only when it is at least twice its ±. The published numbers are often larger than ours. The paper does not state the area it averaged over, and after 2014 it uses a different sensor, so the two are not expected to match exactly.</p>
+    <p class="small muted">All trends in this table are in 10¹⁵ molecules per cm² per year. "Clear" means significant at the 5% level. The ratio is shown only where both find a clear trend in the same years. Published values: Sharma et al. (2023), <i>Environmental Science: Atmospheres</i> 3, 905–918, supplementary Table S2, November 2004 to March 2021. The paper does not say whether its ± is one standard error or a 95% range. We use the strict reading (a published trend is clear only when it is at least twice its ±); where the lenient reading would give a different verdict, the table says so. The published numbers are often larger than ours. The paper does not state the area it averaged over, and after 2014 it uses a different sensor, so the two are not expected to match exactly.</p>
   </section>
 
   <section class="stack">
@@ -233,7 +233,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     <ol class="steps">
       <li>For each day we average the four grid cells (0.5° × 0.5°) around the city. A day counts only if at least two cells have a reading.</li>
       <li>Each day is compared with the normal level for its calendar month. A season's value is the season's normal level plus the average of these daily differences, so a year in which the satellite happened to see more December days than February days is not mistaken for a change in the air. A season needs at least 10 usable days.</li>
-      <li>We measure the trend with the Sen slope (the middle value of the slopes between every pair of years) and test it with the Mann–Kendall test, corrected for year-to-year memory (Hamed and Rao). The four seasons of a city are tested together and their p-values adjusted (Benjamini–Hochberg), so that about 5% at most of the trends we call clear are expected to be false alarms.</li>
+      <li>We measure the trend with the Sen slope (the middle value of the slopes between every pair of years) and test it with the Mann–Kendall test, corrected for year-to-year memory (Hamed and Rao). All twelve city-season tests are adjusted together (Benjamini–Hochberg), so that about 5% at most of the trends we call clear are expected to be false alarms. The page shows the p-value before and after this adjustment.</li>
       <li>We work out the smallest trend this record would detect nine times out of ten (after Weatherhead et al.), from the same uncertainty as the 95% range. A smaller real change would probably be missed.</li>
       <li>We compare with the second source on the same years and give a verdict: rising or falling, sources disagree, or not proven yet. A trend that only our longer record shows is marked "one source so far".</li>
     </ol>
@@ -421,9 +421,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       s = cutSeason(c, k, state.cut);
       $("cutText").textContent = "With the record stopped at " + state.cut + " (" + s.n + " years): " + pillInfo(s.own_verdict).text + ", " +
         sign(s.slope_pct_decade) + "% per decade, range " + sign(s.ci_low_pct_decade) + "% to " + sign(s.ci_high_pct_decade) +
-        "%. With the full record to " + lastY + ": " + pillInfo(full.own_verdict).text + ", " + sign(full.slope_pct_decade) + "% per decade. Our test only, no second source.";
+        "%. With the full record to " + lastY + ": " + pillInfo(full.own_verdict).text + ", " + sign(full.slope_pct_decade) + "% per decade. Exploratory: our test only, no second source, no correction for trying many end years, and the normal level of each month still comes from the full record.";
     } else {
-      $("cutText").textContent = "Drag left to see how the answer depends on how much of the record exists.";
+      $("cutText").textContent = "Drag left to see how the answer depends on how much of the record exists. This is exploratory, not a verdict.";
     }
     $("detailTitle").textContent = D.season_names[k] + " in " + c.name + (isCut ? ", record stopped at " + state.cut : "");
     setPill($("detailPill"), isCut ? s.own_verdict : s.verdict);
@@ -437,7 +437,8 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     fact("Trend", sign(s.slope, 3) + " ×10¹⁵/cm² per year");
     fact("Same, per decade", sign(s.slope_pct_decade) + "% of the average");
     fact("95% range", sign(s.ci_low_pct_decade) + "% to " + sign(s.ci_high_pct_decade) + "%");
-    fact("p-value, adjusted for four seasons", s.p_adj < 0.001 ? "below 0.001" : s.p_adj.toFixed(3));
+    fact(isCut ? "p-value, adjusted for four seasons (exploratory)" : "p-value, adjusted for all " + (D.family_size || 12) + " city-season tests", s.p_adj < 0.001 ? "below 0.001" : s.p_adj.toFixed(3));
+    if (!isCut && isFinite(s.p)) fact("p-value before adjustment", s.p < 0.001 ? "below 0.001" : s.p.toFixed(3));
     fact("Smallest trend likely to be detected", "±" + Math.round(s.mdt_pct_decade) + "% per decade");
     fact("Years used", s.n + " (" + s.first_year + "–" + s.last_year + ")");
     if (!isCut) fact("Usable days per season", "median " + pct(s.coverage_median) + ", worst " + pct(s.coverage_min));
@@ -451,7 +452,16 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     var extra = "";
     if (k === "MAM" && s.without_2020) extra = " Without spring 2020 (COVID-19 lockdown): " + sign(s.without_2020.slope, 3) +
       " per year, p = " + s.without_2020.p.toFixed(2) + ".";
-    $("robust").textContent = "Does the size of the box change our own test? " + bits.join("; ") + ". A wider box mixes in more of the surrounding region, so the percentages differ; what we check is whether the verdict changes." + extra;
+    var u = s.until_2020, full_v = [s.own_verdict], early_v = u ? [u.verdict] : [];
+    Object.keys(r).forEach(function (lab) { (lab.indexOf("to 2020") >= 0 ? early_v : full_v).push(r[lab][k].verdict); });
+    var same = function (a) { return a.every(function (x) { return x === a[0]; }); };
+    var base = "0.5° box (ours), full record: " + pillInfo(s.own_verdict).text.toLowerCase() +
+      (u ? "; 0.5° box (ours) to " + u.last_year + ": " + pillInfo(u.verdict).text.toLowerCase() : "");
+    var verdictLine = same(full_v) && same(early_v)
+      ? " The verdict does not depend on the box size."
+      : " The verdict depends on the box size, so read this season with care.";
+    $("robust").textContent = "Does the size of the box change our own test? Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " +
+      base + "; " + bits.join("; ") + "." + verdictLine + " A wider box mixes in more of the surrounding region, so the percentages differ." + extra;
   }
 
   function niceStep(span, n) {
@@ -569,7 +579,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       tr.appendChild(h("td", "n", p ? sign(p.slope, 2) + " ± " + p.pm.toFixed(2) + (p.significant ? " (clear)" : " (not clear)") : "none"));
       tr.appendChild(h("td", "n", p ? (p.ours_same_period_verdict === "NOT PROVEN YET" || !p.significant ? "not comparable" : p.ratio > 0 ? (Math.round(p.ratio * 10) / 10) + "×" : "opposite sign") : ""));
       var td = h("td"), pill = h("span"); setPill(pill, s.verdict); td.appendChild(pill);
-      if (s.one_source && (s.verdict === "RISING" || s.verdict === "FALLING")) td.appendChild(h("div", "small muted", "one source so far"));
+      if (s.one_source && (s.verdict === "RISING" || s.verdict === "FALLING")) td.appendChild(h("div", "small muted", "unconfirmed: one source so far"));
+      if (p && p.verdict_if_pm_is_95 && p.verdict_if_pm_is_95 !== s.verdict)
+        td.appendChild(h("div", "small muted", "If the study's ± is a 95% range: " + pillInfo(p.verdict_if_pm_is_95).text.toLowerCase()));
       tr.appendChild(td);
       tb.appendChild(tr);
     });
