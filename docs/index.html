@@ -198,7 +198,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
 
   <section class="stack">
     <h2>Does a second source agree?</h2>
-    <p>We compare our result with a published study that used a different record: OMI until 2014, then the European GOME-2B sensor until 2021. A verdict of rising or falling needs both to find a clear trend in the same direction. If our full record shows a trend that neither source finds in the study's own years, the trend is recent: we report it and mark it "one source so far". We compare direction only. The sizes differ, and the table shows by how much.</p>
+    <p>We compare our result with a published study that used a different record: OMI until 2014, then the European GOME-2B sensor until 2021. We compare like with like: our test on the study's own years (2005–2021) against the study. A verdict of rising or falling needs both to find a clear trend in the same direction on those years. If only one of them finds it, the sources disagree. If neither does but our longer record does, the trend is recent: we report it and mark it "one source so far". Agreement means the same direction only. The published trends are 1.1 to 5 times larger than ours, and the table shows by how much.</p>
     <div class="panel scroll">
       <table id="compare"></table>
     </div>
@@ -235,9 +235,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       <li>Each day is compared with the normal level for its calendar month. A season's value is the season's normal level plus the average of these daily differences, so a year in which the satellite happened to see more December days than February days is not mistaken for a change in the air. A season needs at least 10 usable days.</li>
       <li>We measure the trend with the Sen slope (the middle value of the slopes between every pair of years) and test it with the Mann–Kendall test, corrected for year-to-year memory (Hamed and Rao). The four seasons of a city are tested together and their p-values adjusted (Benjamini–Hochberg), so that about 5% at most of the trends we call clear are expected to be false alarms.</li>
       <li>We work out the smallest trend this record would detect nine times out of ten (after Weatherhead et al.), from the same uncertainty as the 95% range. A smaller real change would probably be missed.</li>
-      <li>We compare with the second source and give a verdict: rising or falling, sources disagree, or not proven yet. A trend that only our longer record shows is marked "one source so far".</li>
+      <li>We compare with the second source on the same years and give a verdict: rising or falling, sources disagree, or not proven yet. A trend that only our longer record shows is marked "one source so far".</li>
     </ol>
-    <p class="small muted">The test rules were written down before the analysis was run. Every change made after the first results, and what it did to the numbers, is listed in the change log of METHOD.md in the project repository, with the code and the list of data files.</p>
+    <p class="small muted">Some rules were changed after we saw the first results, including how a verdict is formed from the two sources. Every such change, why we made it and what it did to each verdict is listed in the change log of METHOD.md in the project repository, with the code and the list of data files.</p>
     <h3>Words we use</h3>
     <dl class="gloss">
       <dt>NO₂</dt><dd>Nitrogen dioxide, a gas made when fuel burns: traffic, power plants, heating.</dd>
@@ -253,11 +253,12 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     </dl>
     <h3>Limits</h3>
     <ul class="steps small">
-      <li>NO₂ is one pollutant. Tashkent's worst winter pollutant is fine particles (PM2.5), which this record does not measure.</li>
+      <li>Every verdict here is about the NO₂ column above the city: not the air at street level, and not PM2.5. Tashkent's worst winter pollutant is fine particles (PM2.5), which this record does not measure, and we have not compared our numbers with a ground monitor.</li>
       <li>OMI passes once a day in the early afternoon and misses morning and evening peaks.</li>
       <li>The satellite only reads on fairly clear days, and clear winter days may be cleaner or dirtier than cloudy ones. We have not tested this yet.</li>
       <li>Usable days became fewer over the record in every season. Comparing each day with its own month limits the effect on the trend but cannot remove it.</li>
-      <li>The record joins two copies of the same NASA product: an open copy to May 2020 and NASA Giovanni from June 2020. On the five months they share, the same days are usable and the values differ by about 1%.</li>
+      <li>The record joins two copies of the same NASA product: an open copy to May 2020 and NASA Giovanni from June 2020. On the five months they share, the same days are usable and the values differ by about 1%. That check covers only five months, and the winter rise in Tashkent depends on the years after the join: with the record cut at 2020 the same test cannot tell the winter direction. We therefore call the winter rise unconfirmed.</li>
+      <li>In its last years Aura no longer kept its orbit fixed, so its daily overpass drifted later in the afternoon. We have not corrected for this; a later overpass can change the NO₂ the satellite sees.</li>
       <li>The published study ends in 2021. A trend that appears only later has one source so far.</li>
       <li>The second source shares the OMI sensor until 2014, so it is only partly independent.</li>
     </ul>
@@ -328,10 +329,12 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
         (pub && pub.ratio > 0 && pub.ours_same_period_verdict !== "NOT PROVEN YET" ? ", at a rate " + (Math.round(pub.ratio * 10) / 10) + " times ours over the same years. We agree on direction, not on size." : ".") + then;
     }
     if (s.verdict === "SOURCES DISAGREE") {
-      var ours = s.own_verdict === "NOT PROVEN YET" ? "our test finds no clear trend (range " + lo + "% to " + hi + "% per decade)"
-        : "our test says " + s.own_verdict.toLowerCase() + " (" + sign(s.slope_pct_decade) + "% per decade)";
+      var oc = pub.ours_same_period_verdict, ocClear = oc === "RISING" || oc === "FALLING";
+      var ours = ocClear ? "our test finds a clear " + (oc === "RISING" ? "rise" : "fall") : "our test finds no clear trend";
       var theirs = pub.significant ? "the published study reports a clear " + (pub.slope > 0 ? "rise" : "fall") : "the published study reports no clear trend";
-      return "For " + name + " (" + yrs + "), " + ours + ", but " + theirs + ". Until the two agree, we do not call it.";
+      var later = (s.own_verdict === "RISING" || s.own_verdict === "FALLING") && !ocClear
+        ? " With the years after 2021 added, our own test does find a " + (s.own_verdict === "RISING" ? "rise" : "fall") + " (" + sign(s.slope_pct_decade) + "% per decade), but that does not settle the disagreement on the shared years." : "";
+      return "For " + name + ", on the study's own years (2005–2021) " + ours + ", but " + theirs + "." + later + " Until the two agree, we do not call it.";
     }
     return "We cannot tell whether " + name + " NO₂ over " + city + " rose or fell (" + yrs + "). The change fits anything from " + lo +
       "% to " + hi + "% per decade. A real change smaller than about " + Math.round(s.mdt_pct_decade) +
@@ -377,8 +380,8 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       var cov = h("div", "stack"); cov.style.gap = "5px";
       cov.appendChild(h("div", "small", "Usable satellite reading on <b class='num'>" + pct(s.coverage_median) + "</b> of days"));
       var m = h("div", "meter"); var bar = h("i"); bar.style.width = pct(s.coverage_median); m.appendChild(bar); cov.appendChild(m);
-      card.appendChild(top); card.appendChild(pill);
-      if (s.one_source && clear) card.appendChild(h("div", "small muted", "One source so far"));
+      card.appendChild(top); card.appendChild(h("div", "eyebrow", "NO₂ column")); card.appendChild(pill);
+      if (s.one_source && clear) card.appendChild(h("div", "small muted", "Unconfirmed: one source so far"));
       card.appendChild(big); card.appendChild(range); card.appendChild(cov);
       card.onclick = function () {
         state.season = k; state.cut = null; render();

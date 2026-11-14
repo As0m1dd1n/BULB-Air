@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Turn the OMI cut-outs into seasonal series, coverage numbers and verdicts.
 
-Rules fixed before looking at the results (see METHOD.md):
+Rules (see METHOD.md; changes made after the first results are in its change log):
   box        the 2 x 2 cells of 0.25 deg (0.5 x 0.5 deg) that meet at the grid corner
              nearest to the city centre
   valid day  at least 2 of the 4 cells have a cloud-screened retrieval
@@ -17,13 +17,15 @@ Rules fixed before looking at the results (see METHOD.md):
              TOO LITTLE DATA   fewer than 10 usable season-years
   second source  a published seasonal trend counts as significant when |trend| >= 2 x its
              stated +/- (true whether that +/- is one or two standard errors)
-  verdict    RISING / FALLING   our test and the second source are both significant, same sign
-             RISING / FALLING,  our test is significant, the second source is not, and our
-               one source only  test is also not significant on the second source's own period:
-                                the trend shows only in years the second source does not cover
-             SOURCES DISAGREE   one is significant and the other is not on the same period,
-                                or the signs differ
-             NOT PROVEN YET     neither is significant
+  verdict    first compare like with like: our test on the second source's own years
+             (2005-2021) against the second source.
+             RISING / FALLING   both significant on those years, same sign, and our full
+                                record agrees
+             SOURCES DISAGREE   on those years one is significant and the other is not, or the
+                                signs differ
+             RISING / FALLING,  neither is significant on those years, but our full record is:
+               one source only  the trend shows only in years the second source does not cover
+             NOT PROVEN YET     neither is significant, on any period
              (with no second source the verdict is our own test, marked "one source only")
 """
 import csv, datetime as dt, json, os, sys
@@ -129,15 +131,17 @@ def combined_verdict(own, pub, own_common):
         return own, True
     pub_sig = abs(pub[0]) >= 2 * pub[1]
     pub_dir = "RISING" if pub[0] > 0 else "FALLING"
-    own_sig = own in ("RISING", "FALLING")
-    if own_sig and pub_sig:
-        return (own, False) if own == pub_dir else ("SOURCES DISAGREE", False)
-    if own_sig and not pub_sig:
-        if own_common in ("RISING", "FALLING"):       # clear for us, not for them, same years
+    common_sig = own_common in ("RISING", "FALLING")
+    # 1. Compare like with like: our test on the study's own years against the study.
+    if common_sig and pub_sig:
+        if own_common != pub_dir:
             return "SOURCES DISAGREE", False
-        return own, True                              # the trend appears after their record ends
-    if pub_sig:
+        return (own, False) if own == own_common else ("SOURCES DISAGREE", False)
+    if common_sig != pub_sig:                         # one clear, the other not, same years
         return "SOURCES DISAGREE", False
+    # 2. Neither is clear on the study's years: only our longer record can speak.
+    if own in ("RISING", "FALLING"):
+        return own, True                              # the trend appears after their record ends
     return "NOT PROVEN YET", False
 
 

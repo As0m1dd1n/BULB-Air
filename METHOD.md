@@ -42,12 +42,12 @@ so the interval and this threshold rest on the same estimate of the noise. A rea
 
 - Second source: Sharma et al. (2023), supplementary Table S2, seasonal NO₂ trends from merged OMI (2004–2014) and GOME-2B (2013–2021), November 2004 to March 2021, in 10¹⁵ molecules per cm² per year.
 - The paper does not say whether its ± is one or two standard errors. We call a published trend clear when |trend| ≥ 2 × its ±, which holds under either reading.
-- We compare direction only. Where both are clear on the same years, the published trends are 1.1 to 3.5 times ours; the paper does not state the area it averaged over.
-- Verdict:
-  - RISING / FALLING: our full-record test and the published trend are both clear and have the same sign.
-  - RISING / FALLING, one source so far: our full-record test is clear, the published trend is not, and our own test on the study's years (2005–2021) is not clear either. The two do not disagree; the trend shows only in years the study does not cover.
-  - SOURCES DISAGREE: our test is clear on the study's years and the published trend is not; or the published trend is clear and our full-record test is not; or both are clear with opposite signs.
-  - NOT PROVEN YET: neither is clear.
+- Agreement means the same direction only. The published trends are 1.1 to about 5 times ours on the same years; the paper does not state the area it averaged over.
+- Verdict. We first compare like with like: our own test on the study's years (2005–2021) against the published trend.
+  - RISING / FALLING: on the study's years both are clear with the same sign, and our full-record test agrees.
+  - SOURCES DISAGREE: on the study's years one is clear and the other is not, or both are clear with opposite signs.
+  - RISING / FALLING, one source so far (shown as "unconfirmed"): neither is clear on the study's years, but our full-record test is. The trend shows only in years the study does not cover.
+  - NOT PROVEN YET: none of the three is clear.
 - With no second source (another city, an uploaded file) the verdict is our own test, marked "one source only".
 - The second source shares the OMI sensor for 2004–2014, so it is only partly independent.
 
@@ -73,3 +73,4 @@ The first results used the AWS part only (to May 2020).
 5. **One noise estimate.** The detectable trend was first computed from the residual scatter (Weatherhead's formula), the interval from the rank-based variance. The two disagreed (winter: 27% against an interval that implied about 33%). We now derive the detectable trend from the interval (section 5). Effect: thresholds changed by a few points; verdicts do not depend on this number.
 6. **Record extended to March 2026.** We added June 2020 to March 2026 from NASA Giovanni. Effect on Tashkent: winter changed from NOT PROVEN YET to rising (+22% per decade), spring from SOURCES DISAGREE to RISING; summer and autumn stayed RISING. The site's slider shows the result for any end year.
 7. **Trend after the second source ends.** With the longer record, our winter test for Tashkent became clear while the published study (to 2021) is not. Under the earlier rule this would read SOURCES DISAGREE, although on the study's own years our test is not clear either. We added the "one source so far" case in section 6. Effect: Tashkent winter and Almaty spring read RISING, one source so far, instead of SOURCES DISAGREE.
+8. **Like-with-like comparison (jury review, 14 Nov).** The earlier rule compared the published trend with our full record (to 2026) in one case and with our test on the study's years in another. For Tashkent spring this called two sources "agreeing" although on the shared years 2005–2021 our test was not clear (+0.054 per year, p = 0.06) and the study's was (+0.29 ± 0.04). The rule now always compares on the shared years first (section 6). Effect: Tashkent spring changes from RISING to SOURCES DISAGREE; no other verdict changes in any city. This change was made after the results were known; it makes the verdicts stricter, not more favourable.

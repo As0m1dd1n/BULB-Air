@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-14 07:57 UTC",
+ "generated": "2026-11-14 08:49 UTC",
  "product": "OMI/Aura NO2 Cloud-Screened Tropospheric Column, L3 daily 0.25 deg (OMNO2d v003, NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007)",
  "source": "https://registry.opendata.aws/omi-no2-nasa/",
  "aws_last_day": "2020-05-31",
@@ -346,7 +346,7 @@
      "years_dropped": [],
      "p_adj": 0.00203,
      "own_verdict": "RISING",
-     "verdict": "RISING",
+     "verdict": "SOURCES DISAGREE",
      "slope_pct_decade": 18.22206,
      "ci_low_pct_decade": 9.40988,
      "ci_high_pct_decade": 25.87577,
