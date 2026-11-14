@@ -30,7 +30,7 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 **How it answers the challenge.**
 
 1. *Identify variables.* We chose one variable with a long NASA record and a clear local question, tropospheric NO₂. Any other Giovanni variable can be tested through the CSV upload, with a sample file to try first.
-2. *Acquire data for a region.* A script reads only the grid cells around each city from NASA's public OMNO2d files, with no login; the years after May 2020 come from NASA Giovanni, cell by cell. A city is added with one line.
+2. *Acquire data for a region.* A script reads only the grid cells around each city from NASA's public OMNO2d files, with no login; the years after May 2020 come from NASA Earthdata Cloud OPeNDAP (free Earthdata login), checked against NASA Giovanni for Tashkent. A city is added with one line.
 3. *Time series and visualization.* Yearly values per season with the trend line, a monthly chart of usable days, and a day-by-day calendar of what the satellite saw.
 4. *Statistical analysis.* Sen slope, Mann–Kendall test with the Hamed–Rao correction for autocorrelation, 95% confidence interval, Benjamini–Hochberg adjustment across all 56 region-season tests, and the smallest trend likely to be detected (after Weatherhead et al.). The seasonal cycle is removed by testing each season separately and comparing each day with its own month, as the challenge suggests.
 
@@ -41,7 +41,7 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 - Summer: +23% (+18% to +30%). Rising; the published study finds the same direction, at 3.5 times our rate on the same years.
 - Autumn: +22% (+15% to +29%). Rising; same direction, 2.1 times our rate on the same years.
 
-With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Across all 14 regions of Uzbekistan (2005 to May 2020) NO₂ rose everywhere, and also over empty desert, so we flag a region 🚩 only where NO₂ rose clearly faster than the desert background: 13 of 14 regions, from 4 of 4 seasons (Andijan, Fergana, Namangan, Karshi, Gulistan) down to none (Navoi). Our own test for Tashkent gives the same result when only the single grid cell over the city centre is used; with wider boxes cut at 2020, the winter and spring results depend on the box size.
+With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Across all 14 regions of Uzbekistan (2004 to 2026) NO₂ rose everywhere, and less over empty desert, so we flag a region 🚩 where NO₂ rose clearly faster than the desert background. Every region is flagged in at least one season; 8 in all four (Tashkent, Almalyk (Tashkent region), Andijan, Fergana, Jizzakh, Namangan, Samarkand, Gulistan), Navoi and Nukus in one. Our own test for Tashkent gives the same verdict with a single grid cell and with boxes of 1° and 1.5°.
 
 **Why it matters.** The usual tool gives one slope and one p-value and leaves a student or a journalist to over-read it. BULB-Air teaches the opposite habit with a real local case: ask how much was observed, what size of change could have been detected, whether a second source agrees, and what the same test would have said five years ago.
 
@@ -57,7 +57,7 @@ With the record stopped at 2020, winter and spring are both not proven. The five
 
 - **OMI/Aura NO₂ Cloud-Screened Total and Tropospheric Column, Level 3, daily, 0.25° × 0.25° (OMNO2d, version 003)**, field `ColumnAmountNO2TropCloudScreened`. NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007. Every number on the site is computed from it.
   - 1 October 2004 to 31 May 2020: all 5,688 daily files in NASA's copy in the Registry of Open Data on AWS (https://registry.opendata.aws/omi-no2-nasa/). File list with checksums: `data/raw/MANIFEST.csv`.
-  - 1 June 2020 to 15 March 2026: the same product through **NASA Giovanni** (https://giovanni.gsfc.nasa.gov/giovanni/), "Time Series, Area-Averaged", one grid cell at a time. Settings and cross-checks: `GIOVANNI.md`.
+  - 1 June 2020 to 15 March 2026: the same product through **NASA Earthdata Cloud OPeNDAP** (https://opendap.earthdata.nasa.gov/, collection C1266136111-GES_DISC), one window over Uzbekistan per day. For Tashkent also through **NASA Giovanni** (https://giovanni.gsfc.nasa.gov/giovanni/), one grid cell at a time, as a check: the two agree on all 4,192 cell-days. Settings: `GIOVANNI.md`.
 - **NASA Giovanni** is also the route for users: the site accepts its time-series CSV files, so the same test can be run on any Giovanni variable and region.
 
 ## Space Agency Partner & Other Data
@@ -71,7 +71,7 @@ With the record stopped at 2020, winter and spring are both not proven. The five
 
 We used **Claude (Anthropic)** in the claude.ai app throughout the project:
 
-- **Code.** Claude wrote the data download script, the statistics, the analysis script and the website code under our direction, and operated NASA Giovanni in our browser to request the recent years. The statistics are checked against the independent `pymannkendall` package and the browser version against the Python version (`scripts/verify.py`).
+- **Code.** Claude wrote the data download script, the statistics, the analysis script and the website code under our direction, and operated NASA Giovanni and Earthdata Cloud OPeNDAP in our browser, signed in to our Earthdata account, to request the recent years. The statistics are checked against the independent `pymannkendall` package and the browser version against the Python version (`scripts/verify.py`).
 - **Text and slides.** Claude drafted the project description, the README, the method document, and the text, layout and code-drawn charts of the slides, including the line graphic on the title slide. We reviewed and edited them.
 - **Review.** Before and during the hackathon we used Claude to simulate a panel of judges on our pitch and project to find weak points. No project code or data analysis was produced before the hackathon started.
 - **No AI-generated images, video or audio** are used. All charts are drawn by code from the NASA data. No NASA logos or branding are used.

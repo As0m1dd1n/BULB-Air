@@ -27,7 +27,7 @@ DONE on 14 Nov (commits 865c1a9, 8ad1b1a and the next one): 2 (wording + limits;
 9. Not repeatable: the 12 Giovanni cells were collected by hand. Commit the 12 original CSVs with headers, a script that joins them into `data/raw/giovanni_cells.csv`, and a CI check that runs `analyze.py` + `verify.py`.
 
 ## Scope change (decided 14 Nov): Uzbekistan only
-STATUS 14 Nov: done with all 14 regions (team: include every region, flag the problem ones). a, c (3 desert background boxes, red flag = faster than desert), d, e, f DONE. OPEN: b (Giovanni/earthaccess extension 2020-06 … 2026-03 for the 13 new regions; needs the user's Earthdata login). Pitch slide 6 / other slides may still need a map screenshot.
+STATUS 14 Nov: done with all 14 regions (team: include every region, flag the problem ones). a, c (3 desert background boxes, red flag = faster than desert), d, e, f DONE. b DONE too (Earthdata Cloud OPeNDAP via the user's browser, all 17 boxes to 2026-03-15; matches Giovanni for Tashkent). Item 9 (Giovanni repeatability) is now covered by the OPeNDAP script. Pitch slide 6 / other slides may still need a map screenshot.
 16. Replace Almaty and Bishkek with Uzbek cities. Candidates: Samarkand, Fergana, Navoi, Almalyk/Angren industrial zone (final list: team).
    a. `scripts/fetch_omi.py`: change `CITIES`, rerun (AWS copy, no login, 2004-10 … 2020-05).
    b. 2020-06 … 2026-03: write `scripts/fetch_giovanni.py` (or GES DISC OPeNDAP via `earthaccess`) using the user's Earthdata login from `~/.netrc` (never committed); same 4 cells per city; reproduce the Tashkent part of `giovanni_cells.csv` first as a check (this also closes item 9).

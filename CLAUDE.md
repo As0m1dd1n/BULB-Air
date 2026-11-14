@@ -4,7 +4,7 @@ Formerly "BULB-Air": rename every occurrence to **BULB-Air** (site title, README
 Challenge: *Be An Earth System Trend Detective!* Team: RareFlow Aleshi, Tashkent. Deadline: end of hackathon, 15 Nov 2026.
 
 ## What it is
-Season-by-season trend test of NASA OMI tropospheric NO₂ over all 14 regions of Uzbekistan (Tashkent in depth, to 2026; the other 13 to May 2020).
+Season-by-season trend test of NASA OMI tropospheric NO₂ over all 14 regions of Uzbekistan (all Oct 2004 – Mar 2026; Tashkent also has a published second source).
 Red flag 🚩 = in at least one season NO₂ rose clearly faster than over three desert background boxes (METHOD.md 6a).
 Each season gets one verdict, and the tool says so when the data cannot answer:
 - RISING / FALLING — our test significant AND second source (Sharma et al. 2023, Table S2) clear, same sign
@@ -15,6 +15,7 @@ Without a second source (other cities, uploaded CSV) the verdict is our own test
 
 ## Layout
 - `scripts/fetch_omi.py` — daily OMNO2d v003 cut-outs from NASA's AWS copy (no login, 2004-10 … 2020-05)
+- `scripts/fetch_opendap_browser.js` + `scripts/import_opendap.py` — 2020-06 … 2026-03 from Earthdata Cloud OPeNDAP (Earthdata login in the browser)
 - `scripts/trendstats.py` — Sen slope, Mann–Kendall + Hamed–Rao (factor never < 1), Gilbert CI, Weatherhead MDT, Benjamini–Hochberg
 - `scripts/analyze.py` — seasonal means, coverage, verdicts, robustness (1 cell / 4×4 / 6×6, spring without 2020) → `data/derived/results.json`, `docs/results.js`
 - `scripts/verify.py` — checks vs `pymannkendall` and JS vs Python

@@ -284,7 +284,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       <li>OMI passes once a day in the early afternoon and misses morning and evening peaks.</li>
       <li>The satellite only reads on fairly clear days, and clear winter days may be cleaner or dirtier than cloudy ones. We have not tested this yet.</li>
       <li>Usable days became fewer over the record in every season. Comparing each day with its own month limits the effect on the trend but cannot remove it.</li>
-      <li>The record joins two copies of the same NASA product: an open copy to May 2020 and NASA Giovanni from June 2020. On the five months they share, the same days are usable and the values differ by about 1%. That check covers only five months, and the winter rise in Tashkent depends on the years after the join: with the record cut at 2020 the same test cannot tell the winter direction. We therefore call the winter rise unconfirmed.</li>
+      <li>The record joins two copies of the same NASA product: the open copy on AWS to May 2020 and NASA Earthdata Cloud (OPeNDAP) from June 2020. For Tashkent we also read the later years cell by cell through NASA Giovanni: on all 4,192 cell-days the two later copies agree (correlation 0.99999999). The winter rise in Tashkent and in most regions depends on the years after 2020: with the record cut at 2020 the same test cannot tell the Tashkent winter direction. We therefore call the Tashkent winter rise unconfirmed.</li>
       <li>In its last years Aura no longer kept its orbit fixed, so its daily overpass drifted later in the afternoon. We have not corrected for this; a later overpass can change the NO₂ the satellite sees.</li>
       <li>The published study ends in 2021. A trend that appears only later has one source so far.</li>
       <li>The second source shares the OMI sensor until 2014, so it is only partly independent.</li>
@@ -390,7 +390,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   function renderRegions() {
     var keys = Object.keys(D.cities), nf = keys.filter(function (c) { return D.cities[c].flag; }).length;
     var B = D.background.seasons, bgr = ORDER.map(function (k) { return LOW[k] + " " + sign(B[k].slope_pct_decade) + "%"; });
-    $("regionsText").innerHTML = "NO₂ over every region rose, and so did NO₂ over empty desert (" + bgr.join(", ") + " per decade). " +
+    $("regionsText").innerHTML = "NO₂ rose over every region. Over empty desert it rose less (" + bgr.join(", ") + " per decade). " +
       "Part of each region's rise is therefore regional background, or slow drift of the ageing satellite. " +
       "A <span class='flag'>🚩 red flag</span> marks a region whose NO₂ rose clearly <b>faster than the desert</b> in at least one season: growth from its own sources. " +
       "<b>" + nf + " of " + keys.length + "</b> regions carry one. The number after the flag is how many of the four seasons.";
@@ -406,7 +406,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       var v = D.cities[c], x = X(v.centre[1]), y = Y(v.centre[0]), g = el("g", { class: "city" + (c === state.city ? " sel" : "") });
       g.appendChild(el("circle", { cx: x, cy: y, r: 6, fill: v.flag ? css("--flag") : css("--open") }));
       var POS = { tashkent: [-9, -6, "end"], almalyk: [9, 4, "start"], gulistan: [4, 18, "start"], jizzakh: [0, -12, "middle"],
-        namangan: [4, -10, "start"], andijan: [9, 4, "start"], fergana: [0, 20, "middle"], samarkand: [-8, -8, "end"], navoi: [0, 20, "middle"] };
+        namangan: [4, -10, "start"], andijan: [9, 4, "start"], fergana: [0, 20, "middle"], samarkand: [6, 20, "start"], navoi: [0, -12, "middle"] };
       var ps = POS[c] || [-9, -8, "end"];
       g.appendChild(el("text", { x: x + ps[0], y: y + ps[1], "text-anchor": ps[2] }, v.name + (v.flag ? " 🚩" + v.flag_seasons.length : "")));
       g.addEventListener("click", function () { pick(c); });
@@ -430,7 +430,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     });
     t.appendChild(tb);
     $("regionsNote").textContent = "Table: how much faster than the desert background NO₂ rose, in percent of the region's own level per decade; red = clear (adjusted for all " + (keys.length * 4) + " region-season tests), grey = not clear. " +
-      "Regions other than Tashkent end in May 2020 (the open copy of the data); Tashkent runs to March 2026, and its comparison with the desert uses the years to 2020. " +
+      "Every region and the desert boxes run from October 2004 to March 2026. " +
       "Tashkent region is represented by Almalyk, because the box over its centre Nurafshon would overlap Tashkent city.";
   }
 
@@ -546,8 +546,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     var verdictLine = same(full_v) && same(early_v)
       ? " The verdict does not depend on the box size."
       : " The verdict depends on the box size, so read this season with care.";
-    if (!c.extended) base = "0.5° box (ours): " + pillInfo(s.own_verdict).text.toLowerCase();
-    $("robust").textContent = "Does the size of the box change our own test? " + (c.extended ? "Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " : "") +
+    var cut20 = Object.keys(r).some(function (lab) { return lab.indexOf("to 2020") >= 0; });
+    if (!cut20) base = "0.5° box (ours): " + pillInfo(s.own_verdict).text.toLowerCase();
+    $("robust").textContent = "Does the size of the box change our own test? " + (cut20 ? "Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " : "") +
       base + "; " + bits.join("; ") + "." + verdictLine + " A wider box mixes in more of the surrounding region, so the percentages differ." + extra;
   }
 
@@ -783,7 +784,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   if (mq.addEventListener) mq.addEventListener("change", render);
   new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   $("foot").textContent = "Results computed " + D.generated + " from " + D.product + ", " + D.first_day + " to " + D.last_day + "." +
-    (D.giovanni ? " Days to " + D.aws_last_day + " come from the open copy on AWS; later days, for Tashkent only so far, from NASA Giovanni." : "");
+    (D.extension ? " Days to " + D.aws_last_day + " come from the open copy on AWS, later days from NASA Earthdata Cloud OPeNDAP." : D.giovanni ? " Days to " + D.aws_last_day + " come from the open copy on AWS, later days from NASA Giovanni." : "");
   fromHash(); render();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawCalendar);
 })();

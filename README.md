@@ -17,11 +17,18 @@ Most trend tools draw one line through a whole year and report one number. For a
 
 Percent of the season's average NO₂ column per decade. The verdicts are about the NO₂ column above the city, not street-level air and not PM2.5. Our own test finds a rise in all four seasons; the published study agrees on direction for summer and autumn, disagrees for spring on the shared years 2005–2021, and does not cover the recent winters. Winter NO₂ is about twice the summer level, and the five highest winters of the record are all between 2021 and 2026.
 
-## All 14 regions (OMI NO₂, 2005 to May 2020)
+## All 14 regions (OMI NO₂, October 2004 to March 2026)
 
-NO₂ rose over every region, and also over empty desert (Kyzylkum, Ustyurt: about +9% to +17% per decade), so part of every rise is regional background or slow satellite drift. A 🚩 red flag marks a region where, in at least one season, NO₂ rose clearly faster than over the desert. 13 of 14 regions carry one. Seasons with a clear excess: Andijan, Fergana, Namangan, Karshi, Gulistan 4 of 4; Samarkand 3; Tashkent, Almalyk (Tashkent region), Bukhara, Jizzakh, Termez 2; Urgench, Nukus 1; Navoi none. Navoi and Nukus winter are NOT PROVEN YET even before the background is subtracted.
+NO₂ rose over every region. Over empty desert (Kyzylkum, Ustyurt) it rose less: winter +10% and autumn +9% per decade, spring and summer not clearly. Part of each region's rise is therefore regional background or slow satellite drift. A 🚩 red flag marks a region where, in at least one season, NO₂ rose clearly faster than over the desert. All 14 regions carry one; the number of seasons separates them:
 
-Only Tashkent has a published second source and a record to 2026; the other regions are "one source only" and end in May 2020 until the Giovanni extension is fetched for them. All numbers are on the site and in `data/derived/results.json`.
+| Seasons faster than the desert | Regions |
+|---|---|
+| 4 of 4 | Tashkent, Almalyk (Tashkent region), Andijan, Fergana, Jizzakh, Namangan, Samarkand, Gulistan |
+| 3 | Bukhara, Karshi, Urgench |
+| 2 | Termez |
+| 1 | Navoi, Nukus |
+
+Only Tashkent has a published second source; the other regions are "one source only". All numbers are on the site and in `data/derived/results.json`.
 
 - **RISING / FALLING**: on the study's own years (2005–2021) our test and the published study both find a clear trend in the same direction, and our full record agrees.
 - **Unconfirmed, one source so far**: our longer record shows a trend that neither source finds in the study's own years (it ends in 2021).
@@ -39,13 +46,15 @@ python scripts/verify.py        # three checks (needs pymannkendall and Node.js 
 
 Then open `docs/index.html` in a browser. All raw data is already in `data/raw/`, so `analyze.py` runs on its own.
 
-To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py`, run it, and follow `GIOVANNI.md` for the years after May 2020.
+To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py`, run it, and run `scripts/fetch_opendap_browser.js` in a browser signed in to NASA Earthdata for the years after May 2020, then `scripts/import_opendap.py`.
 
 ## What is in this repository
 
 | Path | What it is |
 |---|---|
 | `scripts/fetch_omi.py` | Downloads daily OMI NO₂ cut-outs from NASA's public copy on AWS (to May 2020) |
+| `scripts/fetch_opendap_browser.js` | June 2020 to March 2026 from NASA Earthdata Cloud OPeNDAP, run in a browser signed in to Earthdata |
+| `scripts/import_opendap.py` | Turns that export (`data/raw/opendap_2020_2026.txt.gz`, unzip first) into `data/raw/omi_daily_cutouts_2020_2026.npz` |
 | `scripts/trendstats.py` | Sen slope, Mann–Kendall with Hamed–Rao correction, confidence interval, detectable trend, false-discovery adjustment |
 | `scripts/analyze.py` | Joins the two data parts, builds season values, coverage, verdicts and the comparison with the published study |
 | `scripts/verify.py` | Checks the statistics against `pymannkendall`, the browser code against Python, and a fresh run against the stored results |

@@ -6,7 +6,7 @@ The rules in sections 1 to 5 were written on 14 November 2026 before the analysi
 
 - Product: OMI/Aura OMNO2d v003, daily, 0.25° × 0.25°, field `ColumnAmountNO2TropCloudScreened` (tropospheric NO₂ column from pixels with cloud fraction below 30%). Unit: molecules per cm²; we report 10¹⁵ molecules per cm².
 - 1 October 2004 to 31 May 2020: every daily file in the public AWS copy (5,688 files; 34 days have no file).
-- 1 June 2020 to 15 March 2026: the same product through NASA Giovanni, one grid cell at a time (see `GIOVANNI.md`).
+- 1 June 2020 to 15 March 2026: the same product through NASA Earthdata Cloud OPeNDAP (collection C1266136111-GES_DISC; every daily granule listed by NASA CMR, 2,112 days), one window over Uzbekistan per day (`scripts/fetch_opendap_browser.js`, `scripts/import_opendap.py`). Earlier, the Tashkent cells were read through NASA Giovanni one cell at a time (see `GIOVANNI.md`); this is now an independent check: on all 4,192 Tashkent cell-days both copies agree (correlation 0.99999999, mean ratio 1.000).
 - Fill values (−1.2676506 × 10³⁰) are treated as missing.
 
 ## 2. City box and usable days
@@ -56,7 +56,7 @@ so the interval and this threshold rest on the same estimate of the noise. A rea
 
 - NO₂ also rises over open desert, so part of every region's rise is regional background or slow drift of the instrument. Three background boxes of the same size, with no town or plant inside: Kyzylkum W: centre 41.50° N, 62.00° E; Kyzylkum E: centre 42.50° N, 65.00° E; Ustyurt: centre 44.00° N, 57.00° E.
 - Background season value = mean of the three boxes' season values (same anomaly method), where at least two boxes have a value.
-- Excess series = region's season value minus the background value of the same season and year. It is tested like any series (section 4); the 56 excess tests form their own Benjamini–Hochberg family. Tashkent's excess uses its years to 2020, because the background boxes end there.
+- Excess series = region's season value minus the background value of the same season and year. It is tested like any series (section 4); the 56 excess tests form their own Benjamini–Hochberg family.
 - Red flag: at least one season whose excess rises clearly (adjusted p < 0.05). The site also shows in how many of the four seasons.
 - Limit: subtracting the background removes a drift that adds the same amount everywhere. A drift that scales with the level (a percentage error) would still leave some excess in polluted regions. The background boxes are 100–700 km from some regions (Termez, the Fergana valley).
 
@@ -68,7 +68,7 @@ Run `python scripts/verify.py`.
 - `docs/stats.js` against the Python results for all 56 region-season series: differences below 10⁻⁵.
 - A fresh run of `analyze.py` reproduces the stored `results.json`.
 - Join of the two data parts: see `GIOVANNI.md`.
-- Box size: our own test is repeated for the single cell that contains the city centre (full record) and for 4 × 4 and 6 × 6 cells (to 2020 only, because the Giovanni part holds the 2 × 2 cells).
+- Box size: our own test is repeated for the single cell that contains the city centre (full record) and for 4 × 4 and 6 × 6 cells, all on the full record.
 - Usable days: the site reports, per season, the number of usable days in the first and last year. They fell in every season and city.
 
 ## 8. Change log (after first results)
@@ -89,4 +89,4 @@ The first results used the AWS part only (to May 2020).
 12. **Box-size check compared like with like.** The wider boxes exist only to 2020, so the site now sets them against our own box cut at 2020, and states whether the verdict depends on the box size. For Tashkent winter and spring it does.
 13. **All 14 regions of Uzbekistan instead of Almaty and Bishkek (team decision, 14 Nov).** The project is about Uzbekistan; we include every region rather than choosing some. New boxes were fetched from the same AWS copy (2004-10 to 2020-05); the Tashkent cut-outs reproduced bit for bit. The Giovanni extension to 2026 exists for Tashkent only, so the other regions end in May 2020. Only Tashkent has a published second source; the other regions are "one source only". With 56 tests in the family instead of 12, Tashkent's adjusted p-values changed slightly; no Tashkent verdict changed.
 14. **Desert background and red flag (section 6a), added after the 14-region results were known.** First rule tried: flag every region with a rising season. It flagged all 14, because NO₂ rose everywhere, including the desert (winter +14% (p = 0.096), spring +9% (p = 0.065), summer +17% (p = 0.002), autumn +16% (p = 0.018) per decade). That rule could not tell regions apart, so the flag now uses the excess over the desert. Effect: 13 of 14 regions flagged; seasons with a clear excess: Andijan 4, Fergana 4, Namangan 4, Karshi 4, Gulistan 4, Samarkand 3, Tashkent 2, Almalyk 2, Bukhara 2, Jizzakh 2, Termez 2, Urgench 1, Nukus 1, Navoi 0.
-
+15. **All regions extended to March 2026 (14 Nov).** The 13 new regions and the desert boxes were extended with NASA Earthdata Cloud OPeNDAP (section 1), so every region now has the same period, October 2004 to March 2026, and the wider boxes for Tashkent run to 2026 as well. Effects: the desert background rise became smaller (winter +10% (p = 0.055), spring +1%, summer +4%, autumn +9% (p = 0.006) per decade). Under the fixed red-flag rule all 14 regions are now flagged; clear excess in 4 of 4 seasons: Tashkent, Almalyk (Tashkent region), Andijan, Fergana, Jizzakh, Namangan, Samarkand, Gulistan; 3: Bukhara, Karshi, Urgench; 2: Termez; 1: Navoi, Nukus. Navoi winter and Nukus spring were the only remaining NOT PROVEN YET cases in item 14 and changed. Tashkent's verdicts did not change. With the full record, Tashkent winter and spring rise at every box size (item 12 no longer applies). We did not change the flag rule after seeing these results; the number of flagged seasons is what separates the regions.

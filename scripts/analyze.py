@@ -244,13 +244,49 @@ def main():
     aws_last = dates[-1]
     dates_aws, status_aws = list(dates), list(status)
 
-    # Optional extension with the same product read through NASA Giovanni, one grid cell at a time.
-    # Only regions that have Giovanni columns are extended; the others end with the AWS copy.
+    # Extension after May 2020, same product (OMNO2d v003, same field):
+    #  1. Earthdata Cloud OPeNDAP export for every box (scripts/import_opendap.py), if present;
+    #  2. otherwise NASA Giovanni, one grid cell at a time, for the regions in giovanni_cells.csv.
+    # Giovanni (Tashkent) is kept as an independent cross-check of the OPeNDAP export.
     giovanni = None
-    series = {c: (list(dates), list(status), cuts[c]) for c in cities}
+    extension = None
+    series = {c: (list(dates), list(status), cuts[c]) for c in allboxes}
     gpath = os.path.join(RAW, "giovanni_cells.csv")
-    if os.path.exists(gpath):
-        gdates, gcells = read_giovanni(gpath)
+    opath = os.path.join(RAW, "omi_daily_cutouts_2020_2026.npz")
+    gdates, gcells = read_giovanni(gpath) if os.path.exists(gpath) else (None, None)
+    if os.path.exists(opath):
+        zo = np.load(opath)
+        odates = [dt.date.fromisoformat(str(d)) for d in zo["dates"]]
+        new = [i for i, d in enumerate(odates) if d > aws_last]
+        for c in allboxes:
+            series[c] = (dates + [odates[i] for i in new], status + [str(zo["status"][i]) for i in new],
+                         np.concatenate([cuts[c], zo[c][new].astype("f8")]))
+        extension = dict(source="NASA Earthdata Cloud OPeNDAP (collection C1266136111-GES_DISC)",
+                         boxes="all", first_day=str(odates[new[0]]), last_day=str(odates[new[-1]]), days=len(new))
+        if gcells:
+            oi = {d: i for i, d in enumerate(odates)}
+            pa, pb, both, one_only = [], [], 0, 0
+            for c in cities:
+                if c not in gcells:
+                    continue
+                for gi, d in enumerate(gdates):
+                    if d in oi:
+                        a_ = zo[c][oi[d], 2:4, 2:4].astype("f8")
+                        b_ = gcells[c][gi]
+                        fa, fb = np.isfinite(a_), np.isfinite(b_)
+                        both += int((fa & fb).sum())
+                        one_only += int((fa ^ fb).sum())
+                        pa += list(a_[fa & fb])
+                        pb += list(b_[fa & fb])
+            pa, pb = np.array(pa), np.array(pb)
+            extension["check_vs_giovanni"] = dict(
+                cell_days_both_valid=both, valid_in_one_only=one_only,
+                correlation=float(np.corrcoef(pa, pb)[0, 1]), mean_ratio=float(pa.mean() / pb.mean()),
+                median_abs_difference_1e15=float(np.median(np.abs(pa - pb)) / UNIT))
+            print("OPeNDAP vs Giovanni (Tashkent cells):", extension["check_vs_giovanni"])
+        last_file = max(series[c][0][-1] for c in cities)
+        print(f"OPeNDAP extension for all {len(allboxes)} boxes: {len(new)} days to {odates[new[-1]]}")
+    elif gcells:
         ext_cities = [c for c in cities if c in gcells]
         index = {d: i for i, d in enumerate(dates)}
         both = one_only = 0
@@ -258,13 +294,13 @@ def main():
         for c in ext_cities:
             for gi, d in enumerate(gdates):
                 if d in index:
-                    a = cuts[c][index[d], 2:4, 2:4]
-                    b = gcells[c][gi]
-                    fa, fb = np.isfinite(a), np.isfinite(b)
+                    a_ = cuts[c][index[d], 2:4, 2:4]
+                    b_ = gcells[c][gi]
+                    fa, fb = np.isfinite(a_), np.isfinite(b_)
                     both += int((fa & fb).sum())
                     one_only += int((fa ^ fb).sum())
-                    pa += list(a[fa & fb])
-                    pb += list(b[fa & fb])
+                    pa += list(a_[fa & fb])
+                    pb += list(b_[fa & fb])
         new = [gi for gi, d in enumerate(gdates) if d > aws_last]
         for c in ext_cities:
             ext = np.full((len(new), cuts[c].shape[1], cuts[c].shape[2]), np.nan)
@@ -279,10 +315,6 @@ def main():
                         overlap_correlation=float(np.corrcoef(pa, pb)[0, 1]),
                         overlap_mean_ratio=float(pb.mean() / pa.mean()),
                         overlap_median_abs_difference_1e15=float(np.median(np.abs(pa - pb)) / UNIT))
-        print(f"Giovanni extension for {', '.join(ext_cities)}: {len(new)} days to {gdates[new[-1]]}; overlap {gdates[0]} to {aws_last}: {both} cell-days "
-              f"valid in both, {one_only} valid in only one; correlation {giovanni['overlap_correlation']:.4f}, "
-              f"mean ratio {giovanni['overlap_mean_ratio']:.4f}, median |difference| "
-              f"{giovanni['overlap_median_abs_difference_1e15']:.4f}e15")
     os.makedirs(OUT, exist_ok=True)
     os.makedirs(SITE, exist_ok=True)
 
@@ -290,7 +322,7 @@ def main():
                   product="OMI/Aura NO2 Cloud-Screened Tropospheric Column, L3 daily 0.25 deg "
                           "(OMNO2d v003, NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007)",
                   source="https://registry.opendata.aws/omi-no2-nasa/", aws_last_day=str(aws_last),
-                  giovanni=giovanni,
+                  giovanni=giovanni, extension=extension,
                   unit="1e15 molecules/cm2", first_day=str(dates[0]), last_day=str(last_file),
                   rules=dict(box_cells=(2 * BOX_HALF) ** 2, min_cells=MIN_CELLS, min_days=MIN_DAYS,
                              min_years=MIN_YEARS, alpha=ALPHA),
@@ -299,12 +331,12 @@ def main():
     families = {}
     for city in cities:
         dates, status, cut = series[city]
-        extended = bool(giovanni) and city in giovanni["cities"]
+        extended = bool(extension) or (bool(giovanni) and city in giovanni["cities"])
         full, rows, daily = analyse_city(dates, cut, status)
         same, _, _ = analyse_city(dates, cut, status, first=2005, last=2021)   # the paper's period
         ci = list(z["cities"]).index(city)
         robust = {}
-        era = " to 2020 only" if extended else ""
+        era = " to 2020 only" if (giovanni and extended) else ""
         one = centre_cell_daily(cut, z["centres"][ci], z["west_north"][ci])
         variants = [("1 cell (0.25 deg)", dict(daily=one)), ("4 x 4 cells (1.0 deg)" + era, dict(half=2)),
                     ("6 x 6 cells (1.5 deg)" + era, dict(half=3))]
@@ -368,7 +400,7 @@ def main():
     # mean of the background boxes, same season and year) keeps only what the city adds.
     bg = {}
     for b in controls:
-        out_b, _, _ = analyse_city(dates_aws, cuts[b], status_aws)
+        out_b, _, _ = analyse_city(series[b][0], series[b][2], series[b][1])
         bg[b] = out_b
     background = {}
     for s in SEASONS:
