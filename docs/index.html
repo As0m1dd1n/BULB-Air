@@ -15,7 +15,7 @@
   --surface-2: #e4e9f0;
   --ink: #0e1b2c;
   --ink-2: #44536a;
-  --muted: #6c7a8d;
+  --muted: #5a6676;
   --line: #d3dae4;
   --accent: #1c5cab;          /* controls and links */
   --data: #2a78d6;            /* measured values */
@@ -159,16 +159,6 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     <label class="small">Region <select id="citySel" aria-label="Region"></select></label>
   </header>
 
-  <section class="stack">
-    <h2>All 14 regions</h2>
-    <p id="regionsText"></p>
-    <div class="regions">
-      <div class="panel"><svg id="uzMap" viewBox="0 0 640 400" role="img" aria-label="Map of Uzbekistan with the 14 regional boxes; red flags mark regions where NO₂ rose faster than the desert background"></svg>
-        <p class="small muted">Dots: the 0.5° box over each regional centre. Dashed squares: desert background boxes. Outline: Natural Earth (public domain), simplified.</p></div>
-      <div class="panel scroll"><table class="rlist" id="regionList"></table></div>
-    </div>
-    <p class="small muted" id="regionsNote"></p>
-  </section>
 
   <section class="stack" aria-live="polite">
     <p class="headline" id="headline"></p>
@@ -202,8 +192,19 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   </section>
 
   <section class="stack">
+    <h2>All 14 regions</h2>
+    <p id="regionsText"></p>
+    <div class="regions">
+      <div class="panel"><svg id="uzMap" viewBox="0 0 640 400" role="img" aria-label="Map of Uzbekistan with the 14 regional boxes; red flags mark regions where NO₂ rose faster than the desert background"></svg>
+        <p class="small muted">Dots: the 0.5° box over each regional centre. Dashed squares: desert background boxes. Outline: Natural Earth (public domain), simplified.</p></div>
+      <div class="panel scroll"><table class="rlist" id="regionList"></table></div>
+    </div>
+    <p class="small muted" id="regionsNote"></p>
+  </section>
+
+  <section class="stack">
     <h2>How often did the satellite see the city?</h2>
-    <p class="small muted">A witness can only report what it saw. That is the idea behind the name.</p>
+    <p class="small muted">A satellite can only report what it saw.</p>
     <p id="coverText"></p>
     <div class="panel">
       <h3>Share of days with a usable reading, by month</h3>
@@ -223,7 +224,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
 
   <section class="stack">
     <h2>Does a second source agree?</h2>
-    <p>We compare our result with a published study that used a different record: OMI until 2014, then the European GOME-2B sensor until 2021. We compare like with like: our test on the study's own years (2005–2021) against the study. A verdict of rising or falling needs both to find a clear trend in the same direction on those years. If only one of them finds it, the sources disagree. If neither does but our longer record does, the trend is recent: we report it and mark it "one source so far". Agreement means the same direction only. The published trends are 1.1 to 5 times larger than ours, and the table shows by how much.</p>
+    <p>We compare our result with a published study that used a different record: OMI until 2014, then the European GOME-2B sensor until 2021. We compare like with like: our test on the study's own years (2005–2021) against the study. A verdict of rising or falling needs both to find a clear trend in the same direction on those years. If only one of them finds it, the sources disagree. If neither does but our longer record does, the trend is recent: we report it and mark it "one source so far". Agreement means the same direction only. The published trends are 2.2 to 3.5 times larger than ours, and the table shows by how much.</p>
     <p class="small" id="compareNone" hidden></p>
     <div class="panel scroll">
       <table id="compare"></table>
@@ -276,6 +277,11 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       <dt>Significant, or clear</dt><dd>If there were no real trend, a pattern this strong would appear by chance less than 5% of the time.</dd>
       <dt>p-value</dt><dd>How often chance alone would give a pattern this strong if there were no real trend. Below 0.05 counts as clear.</dd>
       <dt>±</dt><dd>The uncertainty a study states around its own number.</dd>
+      <dt>Sen slope</dt><dd>The trend we report: the middle value of the slopes between every pair of years, so one odd year cannot pull it far.</dd>
+      <dt>Mann–Kendall test</dt><dd>Counts how often later years are higher than earlier ones. If that happens far more often than chance would give, the trend is clear.</dd>
+      <dt>Tropospheric</dt><dd>The lowest layer of the air, from the ground to about 10–15 km, where our pollution is.</dd>
+      <dt>Desert background</dt><dd>NO₂ over three empty desert squares (Kyzylkum, Ustyurt). It shows the rise that has nothing to do with a city: regional air, or slow change in the ageing satellite.</dd>
+      <dt>🚩 Red flag</dt><dd>In at least one season, NO₂ over the region rose clearly more than over the desert background. The number says in how many of the four seasons.</dd>
       <dt>Not proven yet</dt><dd>The test found no clear trend. It does not mean the air is clean or stable. It means this record cannot tell.</dd>
     </dl>
     <h3>Limits</h3>
@@ -284,7 +290,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       <li>OMI passes once a day in the early afternoon and misses morning and evening peaks.</li>
       <li>The satellite only reads on fairly clear days, and clear winter days may be cleaner or dirtier than cloudy ones. We have not tested this yet.</li>
       <li>Usable days became fewer over the record in every season. Comparing each day with its own month limits the effect on the trend but cannot remove it.</li>
-      <li>The record joins two copies of the same NASA product: the open copy on AWS to May 2020 and NASA Earthdata Cloud (OPeNDAP) from June 2020. For Tashkent we also read the later years cell by cell through NASA Giovanni: on all 4,192 cell-days the two later copies agree (correlation 0.99999999). The winter rise in Tashkent and in most regions depends on the years after 2020: with the record cut at 2020 the same test cannot tell the Tashkent winter direction. We therefore call the Tashkent winter rise unconfirmed.</li>
+      <li>The record joins two copies of the same NASA product: the open copy on AWS to May 2020 and NASA Earthdata Cloud (OPeNDAP) from June 2020. For Tashkent we also read the later years cell by cell through NASA Giovanni: on all 4,192 cell-days the two later copies agree (correlation 0.99999999). The winter rise in Tashkent and in most regions depends on the years after 2020: with the record cut at 2020 the same test cannot tell the Tashkent winter direction. We therefore call the Tashkent winter rise unconfirmed. Is the rise just a jump at that join? In 54 of the 56 region-season series the largest shift in level comes earlier, between 2009 and 2017 (Pettitt test); the two exceptions are small drops. The join does not create the rise. The overpass drift below is a separate, open question.</li>
       <li>In its last years Aura no longer kept its orbit fixed, so its daily overpass drifted later in the afternoon. We have not corrected for this; a later overpass can change the NO₂ the satellite sees.</li>
       <li>The published study ends in 2021. A trend that appears only later has one source so far.</li>
       <li>The second source shares the OMI sensor until 2014, so it is only partly independent.</li>
@@ -293,7 +299,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
 
   <footer>
     <span id="foot"></span>
-    <span>Data: NASA OMI/Aura OMNO2d v003 (doi:10.5067/Aura/OMI/DATA3007), read from NASA's copy in the Registry of Open Data on AWS and from NASA Giovanni. Published comparison: doi:10.1039/d2ea00075j. Air-quality context: World Bank, Air Quality Assessment for Tashkent (2024).</span>
+    <span>Data: NASA OMI/Aura OMNO2d v003 (doi:10.5067/Aura/OMI/DATA3007), read from NASA's copy in the Registry of Open Data on AWS (to May 2020) and from NASA Earthdata Cloud OPeNDAP (from June 2020), checked against NASA Giovanni. Published comparison: doi:10.1039/d2ea00075j. Air-quality context: World Bank, Air Quality Assessment for Tashkent (2024).</span>
     <span>Built during NASA Space Apps 2026 by team RareFlow Aleshi. Code and text were written with help from Claude (Anthropic); see the Use of AI section of the project page. NASA does not endorse this project.</span>
   </footer>
 </main>
@@ -350,8 +356,8 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       return "NO₂ over " + city + " in " + name + " " + (s.verdict === "RISING" ? "rose" : "fell") + " by about " +
         Math.abs(Math.round(s.slope_pct_decade)) + "% per decade (" + yrs + ")." + then + " The published study ends in 2021 and found no clear trend; on those years our test finds none either. The change shows only with the latest years, so one source supports it so far.";
     }
-    var ex = s.excess, exText = ex ? (ex.verdict === "RISING" ? " Compared with the desert background it rose " + sign(ex.slope_pct_decade) + "% per decade faster, a clear difference: growth from the region's own sources."
-      : " Compared with the desert background the extra rise (" + sign(ex.slope_pct_decade) + "% per decade) is not clear, so much of it may be regional background or satellite drift.") : "";
+    var ex = s.excess, exText = ex ? (ex.verdict === "RISING" ? " After subtracting the desert background, a clear rise remains (" + sign(ex.slope_pct_decade) + "% of the region's own level per decade): growth beyond the regional background, likely from the region's own sources."
+      : " After subtracting the desert background, what remains (" + sign(ex.slope_pct_decade) + "% per decade) is not clear, so much of the rise may be regional background or satellite drift.") : "";
     if ((s.verdict === "RISING" || s.verdict === "FALLING") && !pub) {
       return "NO₂ over " + city + " in " + name + " " + (s.verdict === "RISING" ? "rose" : "fell") + " by about " +
         Math.abs(Math.round(s.slope_pct_decade)) + "% per decade (" + yrs + ")." + exText + " Only one source so far: no published seasonal trend exists for this region that we could compare with.";
@@ -393,7 +399,10 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     $("regionsText").innerHTML = "NO₂ rose over every region. Over empty desert it rose less (" + bgr.join(", ") + " per decade). " +
       "Part of each region's rise is therefore regional background, or slow drift of the ageing satellite. " +
       "A <span class='flag'>🚩 red flag</span> marks a region whose NO₂ rose clearly <b>faster than the desert</b> in at least one season: growth from its own sources. " +
-      "<b>" + nf + " of " + keys.length + "</b> regions carry one. The number after the flag is how many of the four seasons.";
+      "Every region carries one, so read the number of seasons: " + [4, 3, 2, 1].map(function (n) {
+        var names = keys.filter(function (c) { return D.cities[c].flag_seasons.length === n; }).map(function (c) { return D.cities[c].name; });
+        return names.length ? "<b>" + n + " of 4</b>: " + names.join(", ") : "";
+      }).filter(Boolean).join("; ") + ".";
     var svg = $("uzMap"); svg.innerHTML = "";
     var X = function (lon) { return 10 + (lon - 55.8) / (74.6 - 55.8) * 620; };
     var Y = function (lat) { return 20 + (45.7 - lat) / (45.7 - 37.0) * 360 * 1.0; };
@@ -415,7 +424,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       svg.appendChild(g);
     });
     var t = $("regionList");
-    t.innerHTML = "<thead><tr><th>Region</th><th>Flag</th><th>Winter</th><th>Spring</th><th>Summer</th><th>Autumn</th></tr></thead>";
+    t.innerHTML = "<caption class='small muted' style='caption-side:top;text-align:left;padding-bottom:6px'>Rise above the desert background, in % of the region's own NO₂ level per decade. Red = clear.</caption><thead><tr><th>Region</th><th>Seasons above desert</th><th>Winter</th><th>Spring</th><th>Summer</th><th>Autumn</th></tr></thead>";
     var tb = h("tbody");
     keys.slice().sort(function (a, b) { return D.cities[b].flag_seasons.length - D.cities[a].flag_seasons.length; }).forEach(function (c) {
       var v = D.cities[c], tr = h("tr", c === state.city ? "sel" : "");
@@ -529,7 +538,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     if (!isCut) fact("Usable days per season", "median " + pct(s.coverage_median) + ", worst " + pct(s.coverage_min));
     if (!isCut && s.seen_days_trend && s.seen_days_trend.first) fact("Usable days, first and last year", s.seen_days_trend.first + " and " + s.seen_days_trend.last);
     fact("Average level", s.mean.toFixed(2) + " ×10¹⁵/cm²");
-    if (!isCut && s.excess) fact("Faster than desert background (" + s.excess.first_year + "–" + s.excess.last_year + ")", sign(s.excess.slope_pct_decade) + "% per decade, " + (s.excess.verdict === "RISING" ? "clear 🚩" : "not clear"));
+    if (!isCut && s.excess) fact("Rise above desert background (" + s.excess.first_year + "–" + s.excess.last_year + ")", sign(s.excess.slope_pct_decade) + "% per decade, " + (s.excess.verdict === "RISING" ? "clear 🚩" : "not clear"));
     if (s.published) fact("Published study", sign(s.published.slope, 2) + " ± " + s.published.pm.toFixed(2) + " ×10¹⁵/cm² per year");
     $("robust").hidden = isCut;
     var r = c.robustness, bits = Object.keys(r).map(function (lab) {
@@ -549,7 +558,10 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     var cut20 = Object.keys(r).some(function (lab) { return lab.indexOf("to 2020") >= 0; });
     if (!cut20) base = "0.5° box (ours): " + pillInfo(s.own_verdict).text.toLowerCase();
     $("robust").textContent = "Does the size of the box change our own test? " + (cut20 ? "Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " : "") +
-      base + "; " + bits.join("; ") + "." + verdictLine + " A wider box mixes in more of the surrounding region, so the percentages differ." + extra;
+      base + "; " + bits.join("; ") + "." + verdictLine + " A wider box mixes in more of the surrounding region, so the percentages differ." + extra +
+      (full.change_point && full.change_point.year ? " Where did the series move most? After " + full.change_point.year + " (Pettitt test, p = " + (full.change_point.p < 0.001 ? "below 0.001" : full.change_point.p.toFixed(3)) +
+        "; average " + full.change_point.mean_before.toFixed(2) + " before, " + full.change_point.mean_after.toFixed(2) + " after). The two copies of the data join in 2020, so a shift in " + full.change_point.year +
+        (full.change_point.year < 2020 ? " is not caused by the join." : " could be caused by the join.") : "");
   }
 
   function niceStep(span, n) {

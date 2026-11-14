@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-14 09:26 UTC",
+ "generated": "2026-11-14 09:44 UTC",
  "product": "OMI/Aura NO2 Cloud-Screened Tropospheric Column, L3 daily 0.25 deg (OMNO2d v003, NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007)",
  "source": "https://registry.opendata.aws/omi-no2-nasa/",
  "aws_last_day": "2020-05-31",
@@ -94,6 +94,12 @@
      "mean": 7.83323,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2017,
+      "p": 0.00819,
+      "mean_before": 6.77792,
+      "mean_after": 9.35755
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -324,6 +330,12 @@
      "mean": 4.71762,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.0382,
+      "mean_before": 4.2595,
+      "mean_after": 5.13409
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -548,6 +560,12 @@
      "mean": 3.84792,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00147,
+      "mean_before": 3.27566,
+      "mean_after": 4.27711
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -772,6 +790,12 @@
      "mean": 6.98573,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2015,
+      "p": 0.00147,
+      "mean_before": 6.02923,
+      "mean_after": 8.03787
+     },
      "season": "SON",
      "years": [
       2005,
@@ -1144,6 +1168,12 @@
      "mean": 4.90679,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2017,
+      "p": 0.0016,
+      "mean_before": 4.13459,
+      "mean_after": 6.02218
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -1355,6 +1385,12 @@
      "mean": 3.03422,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00412,
+      "mean_before": 2.73231,
+      "mean_after": 3.30868
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -1560,6 +1596,12 @@
      "mean": 2.67462,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00113,
+      "mean_before": 2.37748,
+      "mean_after": 2.94475
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -1765,6 +1807,12 @@
      "mean": 4.66546,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2015,
+      "p": 0.00192,
+      "mean_before": 3.95225,
+      "mean_after": 5.44998
+     },
      "season": "SON",
      "years": [
       2005,
@@ -2118,6 +2166,12 @@
      "mean": 3.06185,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2015,
+      "p": 0.0016,
+      "mean_before": 2.19777,
+      "mean_after": 3.92592
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -2329,6 +2383,12 @@
      "mean": 2.15931,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2012,
+      "p": 0.00249,
+      "mean_before": 1.77784,
+      "mean_after": 2.39406
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -2534,6 +2594,12 @@
      "mean": 2.29599,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.0067,
+      "mean_before": 1.98501,
+      "mean_after": 2.45148
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -2739,6 +2805,12 @@
      "mean": 2.61046,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00113,
+      "mean_before": 2.21441,
+      "mean_after": 2.9705
+     },
      "season": "SON",
      "years": [
       2005,
@@ -3092,6 +3164,12 @@
      "mean": 2.23405,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2017,
+      "p": 0.00418,
+      "mean_before": 1.98448,
+      "mean_after": 2.59455
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -3303,6 +3381,12 @@
      "mean": 1.86327,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2012,
+      "p": 0.01664,
+      "mean_before": 1.69714,
+      "mean_after": 1.96551
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -3508,6 +3592,12 @@
      "mean": 1.71473,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.0966,
+      "mean_before": 1.57369,
+      "mean_after": 1.78525
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -3713,6 +3803,12 @@
      "mean": 2.14869,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.04645,
+      "mean_before": 1.98031,
+      "mean_after": 2.27497
+     },
      "season": "SON",
      "years": [
       2005,
@@ -4065,6 +4161,12 @@
      "mean": 3.37683,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2014,
+      "p": 0.0011,
+      "mean_before": 2.58607,
+      "mean_after": 4.0358
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -4276,6 +4378,12 @@
      "mean": 2.24183,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00147,
+      "mean_before": 1.91597,
+      "mean_after": 2.48623
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -4481,6 +4589,12 @@
      "mean": 2.24772,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2012,
+      "p": 0.03127,
+      "mean_before": 2.03534,
+      "mean_after": 2.37842
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -4686,6 +4800,12 @@
      "mean": 2.75232,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2015,
+      "p": 0.00113,
+      "mean_before": 2.37621,
+      "mean_after": 3.16605
+     },
      "season": "SON",
      "years": [
       2005,
@@ -5039,6 +5159,12 @@
      "mean": 1.95534,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2015,
+      "p": 0.0016,
+      "mean_before": 1.46292,
+      "mean_after": 2.44775
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -5250,6 +5376,12 @@
      "mean": 1.79474,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00192,
+      "mean_before": 1.56691,
+      "mean_after": 2.00186
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -5455,6 +5587,12 @@
      "mean": 1.78739,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.01066,
+      "mean_before": 1.63175,
+      "mean_after": 1.92888
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -5660,6 +5798,12 @@
      "mean": 2.47798,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2015,
+      "p": 0.00113,
+      "mean_before": 2.04757,
+      "mean_after": 2.95144
+     },
      "season": "SON",
      "years": [
       2005,
@@ -6013,6 +6157,12 @@
      "mean": 2.61569,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2014,
+      "p": 0.0011,
+      "mean_before": 1.836,
+      "mean_after": 3.26543
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -6224,6 +6374,12 @@
      "mean": 2.03308,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00147,
+      "mean_before": 1.73947,
+      "mean_after": 2.25329
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -6429,6 +6585,12 @@
      "mean": 2.27425,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.02064,
+      "mean_before": 2.07535,
+      "mean_after": 2.42343
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -6634,6 +6796,12 @@
      "mean": 2.55389,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00147,
+      "mean_before": 2.05323,
+      "mean_after": 2.92939
+     },
      "season": "SON",
      "years": [
       2005,
@@ -6987,6 +7155,12 @@
      "mean": 2.26064,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2016,
+      "p": 0.00232,
+      "mean_before": 2.04427,
+      "mean_after": 2.52028
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -7198,6 +7372,12 @@
      "mean": 2.17964,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2012,
+      "p": 0.06765,
+      "mean_before": 2.00461,
+      "mean_after": 2.28735
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -7403,6 +7583,12 @@
      "mean": 2.17958,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2021,
+      "p": 0.37565,
+      "mean_before": 2.24991,
+      "mean_after": 1.8807
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -7608,6 +7794,12 @@
      "mean": 2.53544,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2009,
+      "p": 0.11458,
+      "mean_before": 2.27291,
+      "mean_after": 2.61748
+     },
      "season": "SON",
      "years": [
       2005,
@@ -7958,6 +8150,12 @@
      "mean": 2.02097,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2015,
+      "p": 0.02798,
+      "mean_before": 1.77513,
+      "mean_after": 2.2668
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -8169,6 +8367,12 @@
      "mean": 1.8779,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00412,
+      "mean_before": 1.66089,
+      "mean_after": 2.04066
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -8374,6 +8578,12 @@
      "mean": 1.97868,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.0562,
+      "mean_before": 1.82052,
+      "mean_after": 2.05775
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -8579,6 +8789,12 @@
      "mean": 2.09051,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00412,
+      "mean_before": 1.86076,
+      "mean_after": 2.26281
+     },
      "season": "SON",
      "years": [
       2005,
@@ -8931,6 +9147,12 @@
      "mean": 2.31138,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2015,
+      "p": 0.0016,
+      "mean_before": 1.73587,
+      "mean_after": 2.88689
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -9142,6 +9364,12 @@
      "mean": 2.02446,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00147,
+      "mean_before": 1.71739,
+      "mean_after": 2.30362
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -9347,6 +9575,12 @@
      "mean": 2.0828,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.01066,
+      "mean_before": 1.87614,
+      "mean_after": 2.27068
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -9552,6 +9786,12 @@
      "mean": 2.67509,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2015,
+      "p": 0.00113,
+      "mean_before": 2.26815,
+      "mean_after": 3.12273
+     },
      "season": "SON",
      "years": [
       2005,
@@ -9905,6 +10145,12 @@
      "mean": 5.07614,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2014,
+      "p": 0.01392,
+      "mean_before": 4.345,
+      "mean_after": 5.68541
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -10116,6 +10362,12 @@
      "mean": 2.94881,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.0067,
+      "mean_before": 2.74542,
+      "mean_after": 3.10136
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -10321,6 +10573,12 @@
      "mean": 2.5043,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.06765,
+      "mean_before": 2.27772,
+      "mean_after": 2.61759
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -10526,6 +10784,12 @@
      "mean": 4.26312,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.00147,
+      "mean_before": 3.56237,
+      "mean_after": 4.78868
+     },
      "season": "SON",
      "years": [
       2005,
@@ -10879,6 +11143,12 @@
      "mean": 1.14217,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2016,
+      "p": 0.0011,
+      "mean_before": 0.93363,
+      "mean_after": 1.39242
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -11090,6 +11360,12 @@
      "mean": 1.26931,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.03127,
+      "mean_before": 1.13769,
+      "mean_after": 1.33512
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -11295,6 +11571,12 @@
      "mean": 1.44975,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2022,
+      "p": 0.3295,
+      "mean_before": 1.49407,
+      "mean_after": 1.18382
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -11500,6 +11782,12 @@
      "mean": 1.24787,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.00527,
+      "mean_before": 1.06922,
+      "mean_after": 1.3372
+     },
      "season": "SON",
      "years": [
       2005,
@@ -11851,6 +12139,12 @@
      "mean": 1.23892,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2014,
+      "p": 0.00085,
+      "mean_before": 1.02423,
+      "mean_after": 1.41783
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -12062,6 +12356,12 @@
      "mean": 1.44706,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.08104,
+      "mean_before": 1.33386,
+      "mean_after": 1.50366
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -12267,6 +12567,12 @@
      "mean": 1.36923,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2014,
+      "p": 0.03127,
+      "mean_before": 1.26425,
+      "mean_after": 1.46466
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -12472,6 +12778,12 @@
      "mean": 1.26763,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.01066,
+      "mean_before": 1.12886,
+      "mean_after": 1.33701
+     },
      "season": "SON",
      "years": [
       2005,
@@ -12824,6 +13136,12 @@
      "mean": 1.1404,
      "first_year": 2005,
      "last_year": 2026,
+     "change_point": {
+      "year": 2013,
+      "p": 0.02798,
+      "mean_before": 0.9968,
+      "mean_after": 1.23982
+     },
      "season": "DJF",
      "years": [
       2005,
@@ -13035,6 +13353,12 @@
      "mean": 1.38464,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.00847,
+      "mean_before": 1.24396,
+      "mean_after": 1.45498
+     },
      "season": "MAM",
      "years": [
       2005,
@@ -13240,6 +13564,12 @@
      "mean": 1.20843,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2011,
+      "p": 0.11458,
+      "mean_before": 1.10532,
+      "mean_after": 1.25999
+     },
      "season": "JJA",
      "years": [
       2005,
@@ -13445,6 +13775,12 @@
      "mean": 1.21361,
      "first_year": 2005,
      "last_year": 2025,
+     "change_point": {
+      "year": 2013,
+      "p": 0.01664,
+      "mean_before": 1.11518,
+      "mean_after": 1.28743
+     },
      "season": "SON",
      "years": [
       2005,
@@ -13738,6 +14074,14 @@
   }
  },
  "family_size": 56,
+ "change_points": {
+  "series": 56,
+  "largest_shift_before_2020": 54,
+  "largest_shift_2020_or_later": 2,
+  "first_year": 2009,
+  "last_year": 2022,
+  "note": "Pettitt test: last year before the largest shift in level. The two data copies join after May 2020."
+ },
  "background": {
   "boxes": {
    "bg_kyzylkum_w": {

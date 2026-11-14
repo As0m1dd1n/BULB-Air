@@ -1,4 +1,6 @@
-# How the record was extended with NASA Giovanni
+# NASA Giovanni: the first route to the years after May 2020, now an independent check
+
+**Status (14 Nov 2026):** the analysis now takes June 2020 to March 2026 from NASA Earthdata Cloud OPeNDAP for every region (`scripts/fetch_opendap_browser.js`, `scripts/import_opendap.py`). The Giovanni cells below were requested first, for Tashkent and for the two cities we later dropped (Almaty, Bishkek; their columns remain in `giovanni_cells.csv` as raw data and are not used). They now serve as a check: on all 4,192 Tashkent cell-days from June 2020 to March 2026, Giovanni and Earthdata Cloud agree (correlation 0.99999999; stored in `results.json` under `extension.check_vs_giovanni`). The text below describes the original request.
 
 The open AWS copy of OMNO2d ends on 31 May 2020. The same product continues at NASA GES DISC, and NASA Giovanni serves it to anyone with a free Earthdata login. On 14 November 2026 it reached 15 March 2026.
 
@@ -27,11 +29,11 @@ The twelve CSV files are joined, without any change to the numbers, in `data/raw
 
 ## How it is joined to the AWS record
 
-`scripts/analyze.py` uses the AWS copy to 31 May 2020 and the Giovanni series from 1 June 2020.
+(Originally `scripts/analyze.py` used the Giovanni series from 1 June 2020; it now uses Earthdata Cloud OPeNDAP and keeps Giovanni as a check.)
 
 ## Checks of the join
 
-1. **Shared months, January to May 2020** (computed by `analyze.py`, stored in `results.json` under `giovanni`): 918 cell-days are valid in both sources and none is valid in only one; correlation 0.997; Giovanni is 0.9% higher on average; median absolute difference 0.006 x 10^15 molecules per cm2. The AWS files for 2020 were produced within weeks of the measurement, and NASA has reprocessed those months since.
+1. **Shared months, January to May 2020** (computed by `analyze.py`, checked when Giovanni was the extension; the current check is under `extension.check_vs_giovanni`): 918 cell-days are valid in both sources and none is valid in only one; correlation 0.997; Giovanni is 0.9% higher on average; median absolute difference 0.006 x 10^15 molecules per cm2. The AWS files for 2020 were produced within weeks of the measurement, and NASA has reprocessed those months since.
 2. **An older year, 2012** (spot check in the browser, cell 69.125 E, 41.125 N, first 135 days): the same 60 days are valid in both and every value agrees to the rounding used in the check (0.5 x 10^12).
 
 ## To repeat it

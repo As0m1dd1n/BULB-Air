@@ -8,7 +8,7 @@ BULB-Air
 
 ## High-Level Project Summary
 
-BULB-Air is a website that tests NASA OMI satellite data so students and journalists can see whether nitrogen dioxide (NO₂) over their city is really rising, season by season. Winter is when NO₂ over Tashkent is highest and when the satellite sees the city least: a usable reading on only 35% of days. We analysed 21 years of NASA's daily OMI/Aura NO₂ product (OMNO2d, October 2004 to March 2026) for Tashkent, Almaty and Bishkek. For each season the site gives a verdict (rising or falling, sources disagree, or not proven yet), shows how many days the satellite actually saw, states the smallest trend the record would probably detect, and checks the result against a published study. In Tashkent our test finds the NO₂ column rising in every season by about 20% per decade; a second source confirms this for summer and autumn, disagrees for spring, and does not cover the recent winters. A slider stops the record at any year: at 2020 the same test says winter is not proven. Anyone can drop in a NASA Giovanni CSV and get the same test for their own place.
+BULB-Air is a free website that checks whether nitrogen dioxide (NO₂) pollution, measured from space by NASA's OMI instrument, is really increasing over each of the 14 regions of Uzbekistan, separately for each season. It is for students, journalists and city groups who need a number they can trust. Most trend tools give one slope for the whole year; ours also says how many days the satellite actually saw and when the data cannot answer. We tested 21 years of NASA's daily OMNO2d product (October 2004 to March 2026). Over Tashkent, NO₂ rose by about 20% per decade in all four seasons by our test; a published study confirms the direction for summer and autumn. Winter is when NO₂ is highest and when the satellite has the fewest usable readings (35% of days), so the winter rise is marked unconfirmed. Every region rose faster than empty desert in at least one season, most in the Fergana Valley, Tashkent, Samarkand and Jizzakh. Anyone can drop in a NASA Giovanni CSV and run the same test for another place or variable.
 
 ## Link to Project Demo
 
@@ -39,7 +39,7 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 - Winter: +22% per decade (range +10% to +36%), usable data on 35% of days. Rising, unconfirmed: one source so far.
 - Spring: +18% (+9% to +26%). Sources disagree: on the study's years 2005–2021 the study finds a clear rise and our test does not.
 - Summer: +23% (+18% to +30%). Rising; the published study finds the same direction, at 3.5 times our rate on the same years.
-- Autumn: +22% (+15% to +29%). Rising; same direction, 2.1 times our rate on the same years.
+- Autumn: +22% (+15% to +29%). Rising; same direction, 2.2 times our rate on the same years.
 
 With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Across all 14 regions of Uzbekistan (2004 to 2026) NO₂ rose everywhere, and less over empty desert, so we flag a region 🚩 where NO₂ rose clearly faster than the desert background. Every region is flagged in at least one season; 8 in all four (Tashkent, Almalyk (Tashkent region), Andijan, Fergana, Jizzakh, Namangan, Samarkand, Gulistan), Navoi and Nukus in one. Our own test for Tashkent gives the same verdict with a single grid cell and with boxes of 1° and 1.5°.
 
@@ -47,11 +47,11 @@ With the record stopped at 2020, winter and spring are both not proven. The five
 
 **Who it is for.** High-school and university students learning to read data; journalists and city groups who need a statement they can quote together with its limits.
 
-**Limits.** NO₂ is one pollutant; Tashkent's worst winter pollutant is PM2.5, which this record does not measure. The satellite measures the whole air column once a day in the early afternoon, on fairly clear days only, and usable days became fewer over the years. The second source shares the OMI sensor until 2014 and ends in 2021; where both are clear on the same years its trends are 1.1 to 3.5 times ours, so we claim agreement on direction only. The winter rise for Tashkent rests on one source so far and depends on the years after we join two copies of the NASA record in 2020. In its last years Aura's overpass drifted later in the afternoon; we have not corrected for this. Every verdict is about the NO₂ column, not street-level air and not PM2.5.
+**Limits.** NO₂ is one pollutant; Tashkent's worst winter pollutant is PM2.5, which this record does not measure. The satellite measures the whole air column once a day in the early afternoon, on fairly clear days only, and usable days became fewer over the years. The second source shares the OMI sensor until 2014 and ends in 2021; where both are clear on the same years its trends are 2.2 to 3.5 times ours, so we claim agreement on direction only. The winter rise for Tashkent rests on one source so far and depends on the years after we join two copies of the NASA record in 2020. In its last years Aura's overpass drifted later in the afternoon; we have not corrected for this. Every verdict is about the NO₂ column, not street-level air and not PM2.5.
 
 **Next steps.** Add TROPOMI as a fully independent second satellite; test with ground PM2.5 data whether the clear winter days the satellite sees are cleaner than the days it misses; add a chooser of ready-made Giovanni variables.
 
-**Tools.** Python (NumPy, Rasterio, Requests) for the data and statistics; plain HTML, CSS and JavaScript for the site (no framework); NASA Giovanni for the recent years; GitHub Pages for hosting.
+**Tools.** Python (NumPy, Rasterio, Requests) for the data and statistics; plain HTML, CSS and JavaScript for the site (no framework); NASA Earthdata Cloud OPeNDAP for the recent years, checked against NASA Giovanni; GitHub Pages for hosting.
 
 ## NASA Data
 
@@ -69,7 +69,7 @@ With the record stopped at 2020, winter and spring are both not proven. The five
 
 ## Use of Artificial Intelligence
 
-We used **Claude (Anthropic)** in the claude.ai app throughout the project:
+We used **Claude (Anthropic)** throughout the project, in two products: the claude.ai app (chat, and browser control to operate NASA Giovanni and Earthdata in our signed-in browser) and **Claude Code** (an agent that edits and runs code in the repository; most commits in the history are authored by it). Models: Claude Opus and Claude Sonnet.
 
 - **Code.** Claude wrote the data download script, the statistics, the analysis script and the website code under our direction, and operated NASA Giovanni and Earthdata Cloud OPeNDAP in our browser, signed in to our Earthdata account, to request the recent years. The statistics are checked against the independent `pymannkendall` package and the browser version against the Python version (`scripts/verify.py`).
 - **Text and slides.** Claude drafted the project description, the README, the method document, and the text, layout and code-drawn charts of the slides, including the line graphic on the title slide. We reviewed and edited them.

@@ -28,3 +28,6 @@
 ## Software
 
 - NumPy, Rasterio/GDAL, Requests (Python). Fonts: Bricolage Grotesque, IBM Plex Sans, IBM Plex Mono (SIL Open Font License, served by Google Fonts).
+- Pettitt, A. N. (1979). A non-parametric approach to the change-point problem. Journal of the Royal Statistical Society C, 28(2), 126–135.
+- Natural Earth (public domain): country outline of Uzbekistan used for the site map, simplified (via the world.geo.json collection).
+- NASA Earthdata Cloud OPeNDAP, collection C1266136111-GES_DISC (OMNO2d v003), https://opendap.earthdata.nasa.gov/ (requested 14 November 2026).

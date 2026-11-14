@@ -181,3 +181,23 @@ def analyse(years, values, alpha=0.05):
                 p=mk["p"], z=mk["z"], tau=mk["tau"], hr_correction=mk["correction"],
                 mdt=mdt, noise=sigma, phi=phi, mean=mean,
                 first_year=int(t[0]) if len(t) else None, last_year=int(t[-1]) if len(t) else None)
+
+
+def pettitt(years, values):
+    """Pettitt (1979) change-point test. Returns the last year before the largest shift in level
+    and the approximate two-sided p-value. A steady trend also gives a small p: the test says
+    WHERE the series moved most, not whether it moved by a step or gradually."""
+    pairs = [(t, x) for t, x in zip(years, values) if x is not None and np.isfinite(x)]
+    pairs.sort()
+    t = [q[0] for q in pairs]
+    x = np.array([q[1] for q in pairs], float)
+    n = len(x)
+    if n < 4:
+        return dict(year=None, p=float("nan"))
+    s = np.sign(x[:, None] - x[None, :])          # s[i, j] = sign(x_i - x_j)
+    u = [float(s[:k + 1, k + 1:].sum()) for k in range(n - 1)]
+    k = int(np.argmax(np.abs(u)))
+    big_k = abs(u[k])
+    p = min(1.0, 2.0 * np.exp(-6.0 * big_k ** 2 / (n ** 3 + n ** 2)))
+    return dict(year=int(t[k]), p=float(p), mean_before=float(x[:k + 1].mean()), mean_after=float(x[k + 1:].mean()))
+

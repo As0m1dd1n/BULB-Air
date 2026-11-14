@@ -178,6 +178,7 @@ def analyse_city(dates, cut, status, first=None, last=None, half=BOX_HALF, daily
         res = ts.analyse(years, vals, ALPHA)
         cov = [r["coverage"] for r in rs]
         seen = ts.analyse(years, [r["valid_days"] for r in rs], ALPHA)      # did sampling itself change?
+        res["change_point"] = ts.pettitt(years, vals)
         res.update(season=s, years=years, values=vals,
                    seen_days_trend=dict(slope=seen["slope"], p=seen["p"],
                                         first=rs[0]["valid_days"] if rs else None,
@@ -395,6 +396,12 @@ def main():
             r["p_adj"] = float(pa)
             r["own_verdict"] = r["verdict"] = verdict_for(r, pa)
     result["family_size"] = len(keys)
+    cps = [families[c][0][q]["change_point"] for c in families for q in SEASONS]
+    result["change_points"] = dict(series=len(cps),
+                                   largest_shift_before_2020=sum(1 for v in cps if v["year"] is not None and v["year"] < 2020),
+                                   largest_shift_2020_or_later=sum(1 for v in cps if v["year"] is not None and v["year"] >= 2020),
+                                   first_year=min(v["year"] for v in cps if v["year"]), last_year=max(v["year"] for v in cps if v["year"]),
+                                   note="Pettitt test: last year before the largest shift in level. The two data copies join after May 2020.")
     # Background: open-desert boxes with no town inside. NO2 rose there too, so part of every
     # city's rise is regional background or instrument drift. The excess series (city minus the
     # mean of the background boxes, same season and year) keeps only what the city adds.

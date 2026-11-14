@@ -59,7 +59,8 @@ To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py
 | `scripts/analyze.py` | Joins the two data parts, builds season values, coverage, verdicts and the comparison with the published study |
 | `scripts/verify.py` | Checks the statistics against `pymannkendall`, the browser code against Python, and a fresh run against the stored results |
 | `docs/` | The website (static files, works on GitHub Pages). `stats.js` repeats the same test in the browser |
-| `data/raw/omi_daily_cutouts.npz` | AWS part: 5,722 days × 3 cities × 6 × 6 grid cells |
+| `data/raw/omi_daily_cutouts.npz` | AWS part: 5,722 days × 17 boxes (14 regions + 3 desert) × 6 × 6 grid cells |
+| `data/raw/omi_daily_cutouts_2020_2026.npz` | Earthdata Cloud part: 2,112 days, same boxes |
 | `data/raw/MANIFEST.csv` | Every AWS file used: name, size, MD5, URL |
 | `data/raw/giovanni_cells.csv` | Giovanni part: daily values of the 12 grid cells, January 2020 to March 2026 |
 | `data/derived/` | Daily and seasonal series per city (CSV) and all results (JSON) |
@@ -71,7 +72,7 @@ To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py
 
 ## Data
 
-- **NASA**: OMI/Aura NO₂ Cloud-Screened Total and Tropospheric Column, Level 3, daily, 0.25° × 0.25° (OMNO2d, version 003), field `ColumnAmountNO2TropCloudScreened`. NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007. October 2004 to May 2020 from NASA's copy in the Registry of Open Data on AWS; June 2020 to March 2026 from NASA Giovanni.
+- **NASA**: OMI/Aura NO₂ Cloud-Screened Total and Tropospheric Column, Level 3, daily, 0.25° × 0.25° (OMNO2d, version 003), field `ColumnAmountNO2TropCloudScreened`. NASA GES DISC, doi:10.5067/Aura/OMI/DATA3007. October 2004 to May 2020 from NASA's copy in the Registry of Open Data on AWS; June 2020 to March 2026 from NASA Earthdata Cloud OPeNDAP (collection C1266136111-GES_DISC), checked against NASA Giovanni for the Tashkent cells.
 - **Published comparison**: Sharma et al. (2023), merged OMI (2004–2014) and GOME-2B (2013–2021) seasonal NO₂ trends for 20 cities, doi:10.1039/d2ea00075j, supplementary Table S2.
 
 ## Limits
@@ -80,8 +81,8 @@ To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py
 - The satellite measures the whole air column in the early afternoon, not the air at street level.
 - It reads only on fairly clear days. Whether clear winter days are cleaner or dirtier than cloudy ones is not tested here.
 - Usable days became fewer over the record in every season. Comparing each day with its own month limits the effect on the trend but cannot remove it.
-- The published study shares the OMI sensor until 2014 and ends in 2021. Where both are clear on the same years, its trends are 1.1 to 3.5 times ours.
-- The winter rise for Tashkent rests on one source so far and on the years after the two copies of the NASA record are joined in 2020; the join was checked on five shared months only. With the record cut at 2020 the winter direction is unknown.
+- The published study shares the OMI sensor until 2014 and ends in 2021. Where both are clear on the same years, its trends are 2.2 to 3.5 times ours.
+- The winter rise for Tashkent rests on one source so far and on the years after 2020: with the record cut at 2020 the winter direction is unknown. The two copies of the NASA record (AWS to May 2020, Earthdata Cloud after) are the same product; the later copy matches NASA Giovanni on all 4,192 Tashkent cell-days, and in 54 of 56 series the largest shift in level comes in 2009–2017, before the join.
 - In its last years Aura's overpass drifted later in the afternoon. We have not corrected for this.
 - We have not compared our numbers with a ground monitor.
 
