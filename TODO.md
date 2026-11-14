@@ -11,6 +11,7 @@ Rule for every item: change code/text, rerun `python scripts/analyze.py` and `py
 13. No real users (Influence 5): if possible, show it to one journalist or city specialist and quote one line.
 
 ## Claude Code, no new data needed (priority order)
+DONE on 14 Nov (commits 865c1a9, 8ad1b1a and the next one): 2 (wording + limits; control box still open), 3, 4, 5, 6, 7, 8 (Python; browser slider labelled exploratory), 10, 11. Still open: 2 control box, 9, 15 (slide layout), 16.
 2. Winter rests on the joined Giovanni years 2021–2026. Mark Tashkent winter "RISING, unconfirmed"; add to Limits: Aura overpass-time drift, usable winter days fell 38 → 27, winter +22% equals the 22% detectable trend. Add a control on a nearby clean box if the data allows.
 3. "Published study agrees" is too strong: only the sign matches; on the same years it is 2–5x larger. Spring: ours not clear (+0.054), theirs clear (+0.29) = SOURCES DISAGREE by our own rule, but the card says RISING. Reword to "same direction, size differs 2–3.5x" and fix the verdict logic if needed.
 4. Remove the claim "rules were written before the analysis" (docs/index.html line ~240 and anywhere else). METHOD.md items 2 and 7 were written after results; item 7 moved winter from DISAGREE to RISING.

@@ -10,17 +10,17 @@ Most trend tools draw one line through a whole year and report one number. For a
 
 | Season | Trend per decade | 95% range | Usable days | With the record cut at 2020 | Verdict |
 |---|---|---|---|---|---|
-| Winter (Dec–Feb) | +22% | +10% to +36% | 35% | not proven (−15% to +25%) | **RISING**, one source so far |
-| Spring (Mar–May) | +18% | +9% to +26% | 50% | not proven (−4% to +21%) | **RISING** |
+| Winter (Dec–Feb) | +22% | +10% to +36% | 35% | not proven (−15% to +24%) | **RISING**, unconfirmed: one source so far |
+| Spring (Mar–May) | +18% | +9% to +26% | 50% | not proven (−5% to +21%) | **SOURCES DISAGREE** |
 | Summer (Jun–Aug) | +23% | +18% to +30% | 71% | rising | **RISING** |
 | Autumn (Sep–Nov) | +22% | +15% to +29% | 51% | rising | **RISING** |
 
-Percent of the season's average NO₂ column per decade. Winter NO₂ is about twice the summer level, and the five highest winters of the record are all between 2021 and 2026.
+Percent of the season's average NO₂ column per decade. The verdicts are about the NO₂ column above the city, not street-level air and not PM2.5. Our own test finds a rise in all four seasons; the published study agrees on direction for summer and autumn, disagrees for spring on the shared years 2005–2021, and does not cover the recent winters. Winter NO₂ is about twice the summer level, and the five highest winters of the record are all between 2021 and 2026.
 
 Almaty and Bishkek, tested the same way, also give the other verdicts: Almaty's autumn is NOT PROVEN YET and its winter is SOURCES DISAGREE. All numbers are on the site and in `data/derived/results.json`.
 
-- **RISING / FALLING**: our test is significant and a published study finds the same direction.
-- **One source so far**: our longer record shows a trend that neither source finds in the study's own years (it ends in 2021).
+- **RISING / FALLING**: on the study's own years (2005–2021) our test and the published study both find a clear trend in the same direction, and our full record agrees.
+- **Unconfirmed, one source so far**: our longer record shows a trend that neither source finds in the study's own years (it ends in 2021).
 - **SOURCES DISAGREE**: on the same years, one finds a clear trend and the other does not.
 - **NOT PROVEN YET**: neither finds a clear trend. We then report the smallest trend the record would probably detect. Not proven does not mean the air is clean.
 
@@ -68,7 +68,9 @@ To add a city, add its name and coordinates to `CITIES` in `scripts/fetch_omi.py
 - It reads only on fairly clear days. Whether clear winter days are cleaner or dirtier than cloudy ones is not tested here.
 - Usable days became fewer over the record in every season. Comparing each day with its own month limits the effect on the trend but cannot remove it.
 - The published study shares the OMI sensor until 2014 and ends in 2021. Where both are clear on the same years, its trends are 1.1 to 3.5 times ours.
-- The winter rise for Tashkent rests on one source so far.
+- The winter rise for Tashkent rests on one source so far and on the years after the two copies of the NASA record are joined in 2020; the join was checked on five shared months only. With the record cut at 2020 the winter direction is unknown.
+- In its last years Aura's overpass drifted later in the afternoon. We have not corrected for this.
+- We have not compared our numbers with a ground monitor.
 
 ## Credits
 

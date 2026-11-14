@@ -8,7 +8,7 @@ BULB-Air
 
 ## High-Level Project Summary
 
-BULB-Air is a website that tests NASA OMI satellite data so students and journalists can see whether nitrogen dioxide (NO₂) over their city is really rising, season by season. Winter is when NO₂ over Tashkent is highest and when the satellite sees the city least: a usable reading on only 35% of days. We analysed 21 years of NASA's daily OMI/Aura NO₂ product (OMNO2d, October 2004 to March 2026) for Tashkent, Almaty and Bishkek. For each season the site gives a verdict (rising or falling, sources disagree, or not proven yet), shows how many days the satellite actually saw, states the smallest trend the record would probably detect, and checks the result against a published study. In Tashkent NO₂ rose in every season by about 20% per decade. A slider stops the record at any year: at 2020 the same test says winter is not proven; with the latest winters it is rising. Anyone can drop in a NASA Giovanni CSV and get the same test for their own place.
+BULB-Air is a website that tests NASA OMI satellite data so students and journalists can see whether nitrogen dioxide (NO₂) over their city is really rising, season by season. Winter is when NO₂ over Tashkent is highest and when the satellite sees the city least: a usable reading on only 35% of days. We analysed 21 years of NASA's daily OMI/Aura NO₂ product (OMNO2d, October 2004 to March 2026) for Tashkent, Almaty and Bishkek. For each season the site gives a verdict (rising or falling, sources disagree, or not proven yet), shows how many days the satellite actually saw, states the smallest trend the record would probably detect, and checks the result against a published study. In Tashkent our test finds the NO₂ column rising in every season by about 20% per decade; a second source confirms this for summer and autumn, disagrees for spring, and does not cover the recent winters. A slider stops the record at any year: at 2020 the same test says winter is not proven. Anyone can drop in a NASA Giovanni CSV and get the same test for their own place.
 
 ## Link to Project Demo
 
@@ -32,22 +32,22 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 1. *Identify variables.* We chose one variable with a long NASA record and a clear local question, tropospheric NO₂. Any other Giovanni variable can be tested through the CSV upload, with a sample file to try first.
 2. *Acquire data for a region.* A script reads only the grid cells around each city from NASA's public OMNO2d files, with no login; the years after May 2020 come from NASA Giovanni, cell by cell. A city is added with one line.
 3. *Time series and visualization.* Yearly values per season with the trend line, a monthly chart of usable days, and a day-by-day calendar of what the satellite saw.
-4. *Statistical analysis.* Sen slope, Mann–Kendall test with the Hamed–Rao correction for autocorrelation, 95% confidence interval, Benjamini–Hochberg adjustment across the four seasons, and the smallest trend likely to be detected (after Weatherhead et al.). The seasonal cycle is removed by testing each season separately and comparing each day with its own month, as the challenge suggests.
+4. *Statistical analysis.* Sen slope, Mann–Kendall test with the Hamed–Rao correction for autocorrelation, 95% confidence interval, Benjamini–Hochberg adjustment across all 12 city-season tests, and the smallest trend likely to be detected (after Weatherhead et al.). The seasonal cycle is removed by testing each season separately and comparing each day with its own month, as the challenge suggests.
 
 **What we found.** Tashkent, 0.5° box, 2005 to 2026:
 
-- Winter: +22% per decade (range +10% to +36%), usable data on 35% of days. Rising, one source so far.
-- Spring: +18% (+9% to +26%). Rising; the published study agrees.
-- Summer: +23% (+18% to +30%). Rising; the published study agrees.
-- Autumn: +22% (+15% to +29%). Rising; the published study agrees.
+- Winter: +22% per decade (range +10% to +36%), usable data on 35% of days. Rising, unconfirmed: one source so far.
+- Spring: +18% (+9% to +26%). Sources disagree: on the study's years 2005–2021 the study finds a clear rise and our test does not.
+- Summer: +23% (+18% to +30%). Rising; the published study finds the same direction, at 3.5 times our rate on the same years.
+- Autumn: +22% (+15% to +29%). Rising; same direction, 2.1 times our rate on the same years.
 
-With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Almaty shows the other verdicts: autumn is not proven yet, and for winter the sources disagree. In Bishkek NO₂ rose in spring, summer and autumn, and the sources disagree for winter. The Tashkent verdicts are the same when only the single grid cell over the city centre is used.
+With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Almaty shows the other verdicts: autumn is not proven yet, and for winter the sources disagree. In Bishkek NO₂ rose in spring, summer and autumn, and the sources disagree for winter. Our own test for Tashkent gives the same result when only the single grid cell over the city centre is used; with wider boxes cut at 2020, the winter and spring results depend on the box size.
 
 **Why it matters.** The usual tool gives one slope and one p-value and leaves a student or a journalist to over-read it. BULB-Air teaches the opposite habit with a real local case: ask how much was observed, what size of change could have been detected, whether a second source agrees, and what the same test would have said five years ago.
 
 **Who it is for.** High-school and university students learning to read data; journalists and city groups who need a statement they can quote together with its limits.
 
-**Limits.** NO₂ is one pollutant; Tashkent's worst winter pollutant is PM2.5, which this record does not measure. The satellite measures the whole air column once a day in the early afternoon, on fairly clear days only, and usable days became fewer over the years. The second source shares the OMI sensor until 2014 and ends in 2021; where both are clear on the same years its trends are 1.1 to 3.5 times ours. The winter rise for Tashkent rests on one source so far.
+**Limits.** NO₂ is one pollutant; Tashkent's worst winter pollutant is PM2.5, which this record does not measure. The satellite measures the whole air column once a day in the early afternoon, on fairly clear days only, and usable days became fewer over the years. The second source shares the OMI sensor until 2014 and ends in 2021; where both are clear on the same years its trends are 1.1 to 3.5 times ours, so we claim agreement on direction only. The winter rise for Tashkent rests on one source so far and depends on the years after we join two copies of the NASA record in 2020. In its last years Aura's overpass drifted later in the afternoon; we have not corrected for this. Every verdict is about the NO₂ column, not street-level air and not PM2.5.
 
 **Next steps.** Add TROPOMI as a fully independent second satellite; test with ground PM2.5 data whether the clear winter days the satellite sees are cleaner than the days it misses; add a chooser of ready-made Giovanni variables.
 
