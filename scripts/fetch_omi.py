@@ -31,10 +31,25 @@ BUCKET = "https://omi-no2-nasa.s3.amazonaws.com"
 RES = 0.25
 HALF = 3                      # cut-out is 6 x 6 cells = 1.5 x 1.5 degrees
 
-CITIES = {                    # name: (lat, lon) of the city centre
-    "tashkent": (41.31, 69.28),
-    "almaty": (43.24, 76.92),
-    "bishkek": (42.87, 74.59),
+CITIES = {                    # name: (lat, lon) of the city centre. All 14 regions of Uzbekistan:
+    "tashkent": (41.31, 69.28),     # Tashkent city
+    "almalyk": (40.85, 69.60),      # Tashkent region (admin centre Nurafshon would overlap the city box)
+    "andijan": (40.78, 72.34),      # Andijan region
+    "bukhara": (39.77, 64.42),      # Bukhara region
+    "fergana": (40.39, 71.78),      # Fergana region
+    "jizzakh": (40.12, 67.84),      # Jizzakh region
+    "namangan": (41.00, 71.67),     # Namangan region
+    "navoi": (40.10, 65.38),        # Navoi region
+    "karshi": (38.86, 65.79),       # Kashkadarya region
+    "samarkand": (39.65, 66.96),    # Samarkand region
+    "gulistan": (40.49, 68.78),     # Syrdarya region
+    "termez": (37.22, 67.28),       # Surkhandarya region
+    "urgench": (41.55, 60.63),      # Khorezm region
+    "nukus": (42.46, 59.60),        # Republic of Karakalpakstan
+    # Background (control) boxes: open desert, no town or plant inside the 0.5 deg box
+    "bg_kyzylkum_w": (41.50, 62.00),  # Kyzylkum desert, between Urgench and Uchkuduk
+    "bg_kyzylkum_e": (42.50, 65.00),  # Kyzylkum desert, north of Navoi region towns
+    "bg_ustyurt": (44.00, 57.00),     # Ustyurt plateau
 }
 
 

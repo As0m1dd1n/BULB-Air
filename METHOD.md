@@ -11,7 +11,8 @@ The rules in sections 1 to 5 were written on 14 November 2026 before the analysi
 
 ## 2. City box and usable days
 
-- The box is the 2 × 2 grid cells (0.5° × 0.5°) that meet at the grid corner nearest to the city centre. Tashkent: 41.0–41.5° N, 69.0–69.5° E. Almaty: 43.0–43.5° N, 76.75–77.25° E. Bishkek: 42.5–43.0° N, 74.25–74.75° E.
+- All 14 regions of Uzbekistan, one box per regional centre. Tashkent region is represented by Almalyk (an industrial town), because the box over its centre Nurafshon would overlap the Tashkent city box. No two boxes share a cell.
+- The box is the 2 × 2 grid cells (0.5° × 0.5°) that meet at the grid corner nearest to the centre. Tashkent (Tashkent city): 41.00–41.50° N, 69.00–69.50° E; Almalyk (Tashkent region): 40.50–41.00° N, 69.25–69.75° E; Andijan (Andijan region): 40.50–41.00° N, 72.00–72.50° E; Bukhara (Bukhara region): 39.50–40.00° N, 64.25–64.75° E; Fergana (Fergana region): 40.25–40.75° N, 71.50–72.00° E; Jizzakh (Jizzakh region): 39.75–40.25° N, 67.50–68.00° E; Namangan (Namangan region): 40.75–41.25° N, 71.50–72.00° E; Navoi (Navoi region): 39.75–40.25° N, 65.25–65.75° E; Karshi (Kashkadarya region): 38.50–39.00° N, 65.50–66.00° E; Samarkand (Samarkand region): 39.50–40.00° N, 66.75–67.25° E; Gulistan (Syrdarya region): 40.25–40.75° N, 68.50–69.00° E; Termez (Surkhandarya region): 37.00–37.50° N, 67.00–67.50° E; Urgench (Khorezm region): 41.25–41.75° N, 60.50–61.00° E; Nukus (Republic of Karakalpakstan): 42.25–42.75° N, 59.25–59.75° E.
 - A day is usable when at least 2 of the 4 cells have a value. The daily value is the mean of the valid cells.
 - Coverage of a season = usable days ÷ days in the season.
 
@@ -27,7 +28,7 @@ The rules in sections 1 to 5 were written on 14 November 2026 before the analysi
 - Trend: Sen slope (median of all pairwise slopes), in 10¹⁵ molecules per cm² per year. We also give it as percent of the season's mean level per decade.
 - Test: Mann–Kendall, two-sided, 5% level, with the Hamed and Rao (1998) variance correction for autocorrelation (only lags whose rank autocorrelation is significant at 5% enter the correction, and the correction may only make the test stricter).
 - Interval: 95% confidence interval of the Sen slope (Gilbert 1987), using the corrected variance. The interval is not adjusted for the number of seasons.
-- Family: all city-season tests shown as verdicts (12 with three cities) are one family. We adjust their p-values together with the Benjamini–Hochberg procedure, which controls the expected share of false discoveries, and compare the adjusted value with 0.05. The site shows the adjusted p-value.
+- Family: all region-season tests shown as verdicts (56: 14 regions × 4 seasons) are one family. The tests on the published study's years form a second family (Tashkent only, 4 tests). We adjust their p-values together with the Benjamini–Hochberg procedure, which controls the expected share of false discoveries, and compare the adjusted value with 0.05. The site shows the adjusted p-value.
 - Our own test says RISING or FALLING when the adjusted p is below 0.05, NOT PROVEN YET otherwise, and TOO LITTLE DATA with fewer than 10 season values.
 
 ## 5. Smallest trend likely to be detected
@@ -51,12 +52,20 @@ so the interval and this threshold rest on the same estimate of the noise. A rea
 - With no second source (another city, an uploaded file) the verdict is our own test, marked "one source only".
 - The second source shares the OMI sensor for 2004–2014, so it is only partly independent.
 
+## 6a. Desert background and the red flag
+
+- NO₂ also rises over open desert, so part of every region's rise is regional background or slow drift of the instrument. Three background boxes of the same size, with no town or plant inside: Kyzylkum W: centre 41.50° N, 62.00° E; Kyzylkum E: centre 42.50° N, 65.00° E; Ustyurt: centre 44.00° N, 57.00° E.
+- Background season value = mean of the three boxes' season values (same anomaly method), where at least two boxes have a value.
+- Excess series = region's season value minus the background value of the same season and year. It is tested like any series (section 4); the 56 excess tests form their own Benjamini–Hochberg family. Tashkent's excess uses its years to 2020, because the background boxes end there.
+- Red flag: at least one season whose excess rises clearly (adjusted p < 0.05). The site also shows in how many of the four seasons.
+- Limit: subtracting the background removes a drift that adds the same amount everywhere. A drift that scales with the level (a percentage error) would still leave some excess in polluted regions. The background boxes are 100–700 km from some regions (Termez, the Fergana valley).
+
 ## 7. Checks
 
 Run `python scripts/verify.py`.
 
 - `scripts/trendstats.py` against the `pymannkendall` package on 300 random autocorrelated series: identical slopes; p-values within 0.002, except where our stricter correction rule applies.
-- `docs/stats.js` against the Python results for all 12 city-season series: differences below 10⁻⁵.
+- `docs/stats.js` against the Python results for all 56 region-season series: differences below 10⁻⁵.
 - A fresh run of `analyze.py` reproduces the stored `results.json`.
 - Join of the two data parts: see `GIOVANNI.md`.
 - Box size: our own test is repeated for the single cell that contains the city centre (full record) and for 4 × 4 and 6 × 6 cells (to 2020 only, because the Giovanni part holds the 2 × 2 cells).
@@ -78,3 +87,6 @@ The first results used the AWS part only (to May 2020).
 10. **Both readings of the published ±.** The strict reading stays the rule; the lenient reading is now shown where it gives another verdict (Almaty autumn: NOT PROVEN YET under the strict reading, SOURCES DISAGREE under the lenient one).
 11. **Monthly normal levels from the tested years only.** When a test uses only part of the record (the study's years, the record cut at 2020), the normal level of each month is now computed from those years only, so later years cannot leak into an earlier test. The browser slider still uses the full-record normal levels and is labelled exploratory. Effect: small changes in the period-limited slopes (Tashkent spring 2005–2021: +0.054 to +0.052 per year); no verdict changed.
 12. **Box-size check compared like with like.** The wider boxes exist only to 2020, so the site now sets them against our own box cut at 2020, and states whether the verdict depends on the box size. For Tashkent winter and spring it does.
+13. **All 14 regions of Uzbekistan instead of Almaty and Bishkek (team decision, 14 Nov).** The project is about Uzbekistan; we include every region rather than choosing some. New boxes were fetched from the same AWS copy (2004-10 to 2020-05); the Tashkent cut-outs reproduced bit for bit. The Giovanni extension to 2026 exists for Tashkent only, so the other regions end in May 2020. Only Tashkent has a published second source; the other regions are "one source only". With 56 tests in the family instead of 12, Tashkent's adjusted p-values changed slightly; no Tashkent verdict changed.
+14. **Desert background and red flag (section 6a), added after the 14-region results were known.** First rule tried: flag every region with a rising season. It flagged all 14, because NO₂ rose everywhere, including the desert (winter +14% (p = 0.096), spring +9% (p = 0.065), summer +17% (p = 0.002), autumn +16% (p = 0.018) per decade). That rule could not tell regions apart, so the flag now uses the excess over the desert. Effect: 13 of 14 regions flagged; seasons with a clear excess: Andijan 4, Fergana 4, Namangan 4, Karshi 4, Gulistan 4, Samarkand 3, Tashkent 2, Almalyk 2, Bukhara 2, Jizzakh 2, Termez 2, Urgench 1, Nukus 1, Navoi 0.
+

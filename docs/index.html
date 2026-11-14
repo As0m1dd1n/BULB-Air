@@ -20,6 +20,7 @@
   --accent: #1c5cab;          /* controls and links */
   --data: #2a78d6;            /* measured values */
   --rise: #c2410c;            /* status: rising */
+  --flag: #c81e1e;            /* red flag: rising faster than the desert background */
   --fall: #0f7a55;            /* status: falling */
   --split: #8a5a00;           /* status: sources disagree */
   --open: #55627a;            /* status: not proven */
@@ -33,7 +34,7 @@
     color-scheme: dark;
     --bg: #0e1621; --surface: #172231; --surface-2: #223043; --ink: #edeae3; --ink-2: #b9c3d1;
     --muted: #8c9aab; --line: #2b3a4e; --accent: #7fb4f0; --data: #3987e5;
-    --rise: #f28c4b; --fall: #4cc79a; --split: #e2b34a; --open: #a7b3c5;
+    --flag: #ff6b6b; --rise: #f28c4b; --fall: #4cc79a; --split: #e2b34a; --open: #a7b3c5;
     --rise-bg: #3a2416; --fall-bg: #12352b; --split-bg: #3a2f12; --open-bg: #253246;
   }
 }
@@ -41,7 +42,7 @@
   color-scheme: dark;
   --bg: #0e1621; --surface: #172231; --surface-2: #223043; --ink: #edeae3; --ink-2: #b9c3d1;
   --muted: #8c9aab; --line: #2b3a4e; --accent: #7fb4f0; --data: #3987e5;
-  --rise: #f28c4b; --fall: #4cc79a; --split: #e2b34a; --open: #a7b3c5;
+  --flag: #ff6b6b; --rise: #f28c4b; --fall: #4cc79a; --split: #e2b34a; --open: #a7b3c5;
   --rise-bg: #3a2416; --fall-bg: #12352b; --split-bg: #3a2f12; --open-bg: #253246;
 }
 * { box-sizing: border-box; }
@@ -72,6 +73,19 @@ button:focus-visible, .card:focus-visible, input:focus-visible, label.pick:focus
 
 .headline { font: 500 clamp(19px, 2.6vw, 24px)/1.35 var(--display); max-width: 30em; }
 
+.regions { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .regions { grid-template-columns: 1fr; } }
+#uzMap { width: 100%; height: auto; display: block; }
+#uzMap .land { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; }
+#uzMap .bg { fill: none; stroke: var(--muted); stroke-dasharray: 3 3; }
+#uzMap text { font: 500 12px var(--body); fill: var(--ink-2); }
+#uzMap g.city { cursor: pointer; }
+#uzMap g.city.sel circle { stroke: var(--ink); stroke-width: 3; }
+table.rlist td, table.rlist th { padding: 6px 8px; }
+table.rlist tr { cursor: pointer; }
+table.rlist tr.sel td { background: var(--surface-2); }
+.flag { color: var(--flag); font-weight: 700; }
+select#citySel { font: 600 15px var(--body); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 @media (max-width: 900px) { .cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }
@@ -140,10 +154,21 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     <div class="brand">
       <span class="eyebrow">NASA Space Apps 2026 · Earth System Trend Detective</span>
       <h1>BULB-Air</h1>
-      <p class="tag">Is NO₂ over your city really rising? We test NASA satellite data season by season, and say so when the data cannot answer.</p>
+      <p class="tag">Is NO₂ over your region really rising? We test NASA satellite data for all 14 regions of Uzbekistan, season by season, and say so when the data cannot answer.</p>
     </div>
-    <div class="tabs" role="tablist" aria-label="City" id="cityTabs"></div>
+    <label class="small">Region <select id="citySel" aria-label="Region"></select></label>
   </header>
+
+  <section class="stack">
+    <h2>All 14 regions</h2>
+    <p id="regionsText"></p>
+    <div class="regions">
+      <div class="panel"><svg id="uzMap" viewBox="0 0 640 400" role="img" aria-label="Map of Uzbekistan with the 14 regional boxes; red flags mark regions where NO₂ rose faster than the desert background"></svg>
+        <p class="small muted">Dots: the 0.5° box over each regional centre. Dashed squares: desert background boxes. Outline: Natural Earth (public domain), simplified.</p></div>
+      <div class="panel scroll"><table class="rlist" id="regionList"></table></div>
+    </div>
+    <p class="small muted" id="regionsNote"></p>
+  </section>
 
   <section class="stack" aria-live="polite">
     <p class="headline" id="headline"></p>
@@ -199,6 +224,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   <section class="stack">
     <h2>Does a second source agree?</h2>
     <p>We compare our result with a published study that used a different record: OMI until 2014, then the European GOME-2B sensor until 2021. We compare like with like: our test on the study's own years (2005–2021) against the study. A verdict of rising or falling needs both to find a clear trend in the same direction on those years. If only one of them finds it, the sources disagree. If neither does but our longer record does, the trend is recent: we report it and mark it "one source so far". Agreement means the same direction only. The published trends are 1.1 to 5 times larger than ours, and the table shows by how much.</p>
+    <p class="small" id="compareNone" hidden></p>
     <div class="panel scroll">
       <table id="compare"></table>
     </div>
@@ -231,9 +257,10 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   <section class="stack">
     <h2>How the test works</h2>
     <ol class="steps">
+      <li>Each of the 14 regions is represented by a box over its regional centre (Tashkent region by Almalyk). Three boxes over open desert (Kyzylkum west and east, Ustyurt) give the background. For each region and season we also test the difference "region minus background"; a clear rise of that difference earns the red flag.</li>
       <li>For each day we average the four grid cells (0.5° × 0.5°) around the city. A day counts only if at least two cells have a reading.</li>
       <li>Each day is compared with the normal level for its calendar month. A season's value is the season's normal level plus the average of these daily differences, so a year in which the satellite happened to see more December days than February days is not mistaken for a change in the air. A season needs at least 10 usable days.</li>
-      <li>We measure the trend with the Sen slope (the middle value of the slopes between every pair of years) and test it with the Mann–Kendall test, corrected for year-to-year memory (Hamed and Rao). All twelve city-season tests are adjusted together (Benjamini–Hochberg), so that about 5% at most of the trends we call clear are expected to be false alarms. The page shows the p-value before and after this adjustment.</li>
+      <li>We measure the trend with the Sen slope (the middle value of the slopes between every pair of years) and test it with the Mann–Kendall test, corrected for year-to-year memory (Hamed and Rao). All 56 region-season tests (14 regions × 4 seasons) are adjusted together (Benjamini–Hochberg), so that about 5% at most of the trends we call clear are expected to be false alarms. The page shows the p-value before and after this adjustment.</li>
       <li>We work out the smallest trend this record would detect nine times out of ten (after Weatherhead et al.), from the same uncertainty as the 95% range. A smaller real change would probably be missed.</li>
       <li>We compare with the second source on the same years and give a verdict: rising or falling, sources disagree, or not proven yet. A trend that only our longer record shows is marked "one source so far".</li>
     </ol>
@@ -323,10 +350,16 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       return "NO₂ over " + city + " in " + name + " " + (s.verdict === "RISING" ? "rose" : "fell") + " by about " +
         Math.abs(Math.round(s.slope_pct_decade)) + "% per decade (" + yrs + ")." + then + " The published study ends in 2021 and found no clear trend; on those years our test finds none either. The change shows only with the latest years, so one source supports it so far.";
     }
+    var ex = s.excess, exText = ex ? (ex.verdict === "RISING" ? " Compared with the desert background it rose " + sign(ex.slope_pct_decade) + "% per decade faster, a clear difference: growth from the region's own sources."
+      : " Compared with the desert background the extra rise (" + sign(ex.slope_pct_decade) + "% per decade) is not clear, so much of it may be regional background or satellite drift.") : "";
+    if ((s.verdict === "RISING" || s.verdict === "FALLING") && !pub) {
+      return "NO₂ over " + city + " in " + name + " " + (s.verdict === "RISING" ? "rose" : "fell") + " by about " +
+        Math.abs(Math.round(s.slope_pct_decade)) + "% per decade (" + yrs + ")." + exText + " Only one source so far: no published seasonal trend exists for this region that we could compare with.";
+    }
     if (s.verdict === "RISING" || s.verdict === "FALLING") {
       return "NO₂ over " + city + " in " + name + " " + (s.verdict === "RISING" ? "rose" : "fell") + " by about " +
         Math.abs(Math.round(s.slope_pct_decade)) + "% per decade (" + yrs + "). The published study finds the same direction" +
-        (pub && pub.ratio > 0 && pub.ours_same_period_verdict !== "NOT PROVEN YET" ? ", at a rate " + (Math.round(pub.ratio * 10) / 10) + " times ours over the same years. We agree on direction, not on size." : ".") + then;
+        (pub && pub.ratio > 0 && pub.ours_same_period_verdict !== "NOT PROVEN YET" ? ", at a rate " + (Math.round(pub.ratio * 10) / 10) + " times ours over the same years. We agree on direction, not on size." : ".") + then + exText;
     }
     if (s.verdict === "SOURCES DISAGREE") {
       var oc = pub.ours_same_period_verdict, ocClear = oc === "RISING" || oc === "FALLING";
@@ -338,17 +371,67 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     }
     return "We cannot tell whether " + name + " NO₂ over " + city + " rose or fell (" + yrs + "). The change fits anything from " + lo +
       "% to " + hi + "% per decade. A real change smaller than about " + Math.round(s.mdt_pct_decade) +
-      "% per decade would probably have been missed. Not proven does not mean the air is clean.";
+      "% per decade would probably have been missed. Not proven does not mean the air is clean." + exText;
   }
 
+  var OUTLINE = [[66.52,37.36],[66.55,37.97],[65.22,38.4],[64.17,38.89],[63.52,39.36],[62.37,40.05],[61.88,41.08],[61.55,41.27],[60.47,41.22],[60.08,41.43],[59.98,42.22],[58.63,42.75],[57.79,42.17],[56.93,41.83],[57.1,41.32],[55.97,41.31],[55.93,45.0],[58.5,45.59],[58.69,45.5],[60.24,44.78],[61.06,44.41],[62.01,43.5],[63.19,43.65],[64.9,43.73],[66.1,43.0],[66.02,41.99],[66.51,41.99],[66.71,41.17],[67.99,41.14],[68.26,40.66],[68.63,40.67],[69.07,41.38],[70.39,42.08],[70.96,42.27],[71.26,42.17],[70.42,41.52],[71.16,41.14],[71.87,41.39],[73.06,40.87],[71.77,40.15],[71.01,40.24],[70.6,40.22],[70.46,40.5],[70.67,40.96],[69.33,40.73],[69.01,40.09],[68.54,39.53],[67.7,39.58],[67.44,39.14],[68.18,38.9],[68.39,38.16],[67.83,37.14],[67.08,37.36],[66.52,37.36]];
+  function pick(c) { state.city = c; state.cut = null; try { location.hash = c; } catch (e) {} render(); }
   function renderTabs() {
-    var box = $("cityTabs"); box.innerHTML = "";
-    Object.keys(D.cities).forEach(function (c) {
-      var b = h("button", "", D.cities[c].name);
-      b.setAttribute("role", "tab"); b.setAttribute("aria-selected", c === state.city); b.id = "tab-" + c;
-      b.onclick = function () { state.city = c; state.cut = null; try { location.hash = c; } catch (e) {} render(); };
-      box.appendChild(b);
+    var sel = $("citySel");
+    if (!sel.options.length) {
+      Object.keys(D.cities).forEach(function (c) {
+        var o = document.createElement("option"); o.value = c;
+        o.textContent = (D.cities[c].flag ? "🚩 " : "") + D.cities[c].name + " · " + D.cities[c].region; sel.appendChild(o);
+      });
+      sel.onchange = function () { pick(sel.value); };
+    }
+    sel.value = state.city;
+  }
+  function renderRegions() {
+    var keys = Object.keys(D.cities), nf = keys.filter(function (c) { return D.cities[c].flag; }).length;
+    var B = D.background.seasons, bgr = ORDER.map(function (k) { return LOW[k] + " " + sign(B[k].slope_pct_decade) + "%"; });
+    $("regionsText").innerHTML = "NO₂ over every region rose, and so did NO₂ over empty desert (" + bgr.join(", ") + " per decade). " +
+      "Part of each region's rise is therefore regional background, or slow drift of the ageing satellite. " +
+      "A <span class='flag'>🚩 red flag</span> marks a region whose NO₂ rose clearly <b>faster than the desert</b> in at least one season: growth from its own sources. " +
+      "<b>" + nf + " of " + keys.length + "</b> regions carry one. The number after the flag is how many of the four seasons.";
+    var svg = $("uzMap"); svg.innerHTML = "";
+    var X = function (lon) { return 10 + (lon - 55.8) / (74.6 - 55.8) * 620; };
+    var Y = function (lat) { return 20 + (45.7 - lat) / (45.7 - 37.0) * 360 * 1.0; };
+    svg.appendChild(el("path", { class: "land", d: "M" + OUTLINE.map(function (p) { return X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1); }).join("L") + "Z" }));
+    Object.keys(D.background.boxes).forEach(function (b) {
+      var q = D.background.boxes[b].centre;
+      svg.appendChild(el("rect", { class: "bg", x: X(q[1] - 0.25), y: Y(q[0] + 0.25), width: X(q[1] + 0.25) - X(q[1] - 0.25), height: Y(q[0] - 0.25) - Y(q[0] + 0.25) }));
     });
+    keys.forEach(function (c) {
+      var v = D.cities[c], x = X(v.centre[1]), y = Y(v.centre[0]), g = el("g", { class: "city" + (c === state.city ? " sel" : "") });
+      g.appendChild(el("circle", { cx: x, cy: y, r: 6, fill: v.flag ? css("--flag") : css("--open") }));
+      var POS = { tashkent: [-9, -6, "end"], almalyk: [9, 4, "start"], gulistan: [4, 18, "start"], jizzakh: [0, -12, "middle"],
+        namangan: [4, -10, "start"], andijan: [9, 4, "start"], fergana: [0, 20, "middle"], samarkand: [-8, -8, "end"], navoi: [0, 20, "middle"] };
+      var ps = POS[c] || [-9, -8, "end"];
+      g.appendChild(el("text", { x: x + ps[0], y: y + ps[1], "text-anchor": ps[2] }, v.name + (v.flag ? " 🚩" + v.flag_seasons.length : "")));
+      g.addEventListener("click", function () { pick(c); });
+      g.addEventListener("mousemove", function (e) { showTip(e, "<b>" + v.name + "</b> · " + v.region + "<br>" + (v.flag ? "Faster than the desert in " + v.flag_seasons.length + " of 4 seasons" : "Not clearly faster than the desert")); });
+      g.addEventListener("mouseleave", hideTip);
+      svg.appendChild(g);
+    });
+    var t = $("regionList");
+    t.innerHTML = "<thead><tr><th>Region</th><th>Flag</th><th>Winter</th><th>Spring</th><th>Summer</th><th>Autumn</th></tr></thead>";
+    var tb = h("tbody");
+    keys.slice().sort(function (a, b) { return D.cities[b].flag_seasons.length - D.cities[a].flag_seasons.length; }).forEach(function (c) {
+      var v = D.cities[c], tr = h("tr", c === state.city ? "sel" : "");
+      tr.appendChild(h("td", "", "<b>" + v.name + "</b><div class='small muted'>" + v.region + "</div>"));
+      tr.appendChild(h("td", "n", v.flag ? "<span class='flag'>🚩 " + v.flag_seasons.length + "/4</span>" : "<span class='muted'>—</span>"));
+      ORDER.forEach(function (k) {
+        var e = v.seasons[k].excess, clear = e.verdict === "RISING" || e.verdict === "FALLING";
+        tr.appendChild(h("td", "n", "<span" + (clear ? " class='flag'" : " class='muted'") + ">" + sign(e.slope_pct_decade) + "%</span>"));
+      });
+      tr.onclick = function () { pick(c); window.scrollTo({ top: $("headline").getBoundingClientRect().top + window.scrollY - 20, behavior: "smooth" }); };
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb);
+    $("regionsNote").textContent = "Table: how much faster than the desert background NO₂ rose, in percent of the region's own level per decade; red = clear (adjusted for all " + (keys.length * 4) + " region-season tests), grey = not clear. " +
+      "Regions other than Tashkent end in May 2020 (the open copy of the data); Tashkent runs to March 2026, and its comparison with the desert uses the years to 2020. " +
+      "Tashkent region is represented by Almalyk, because the box over its centre Nurafshon would overlap Tashkent city.";
   }
 
   function renderCards() {
@@ -365,7 +448,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     if (groups["SOURCES DISAGREE"].length) parts.push("For " + list(groups["SOURCES DISAGREE"]) + " the sources disagree.");
     if (groups["NOT PROVEN YET"].length) parts.push(list(groups["NOT PROVEN YET"]).replace(/^./, function (m) { return m.toUpperCase(); }) + ": not proven yet.");
     var solo = ORDER.filter(function (k) { var q = c.seasons[k]; return q.one_source && (q.verdict === "RISING" || q.verdict === "FALLING"); }).map(function (k) { return LOW[k]; });
-    if (solo.length) parts.push("For " + list(solo) + " only one source shows it so far.");
+    var anyPub = ORDER.some(function (k) { return c.seasons[k].published; });
+    if (solo.length && !anyPub) parts.push("No published study covers " + c.name + ", so this rests on one source.");
+    else if (solo.length) parts.push("For " + list(solo) + " only one source shows it so far.");
     $("headline").textContent = parts.join(" ");
     ORDER.forEach(function (k) {
       var s = c.seasons[k], card = h("button", "card");
@@ -390,7 +475,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
       };
       box.appendChild(card);
     });
-    $("cardNote").textContent = "Tropospheric NO₂ column from NASA's OMI sensor, " + MN[+D.first_day.slice(5, 7) - 1] + " " + D.first_day.slice(0, 4) + " to " + MN[+D.last_day.slice(5, 7) - 1] + " " + D.last_day.slice(0, 4) +
+    $("cardNote").textContent = "Tropospheric NO₂ column from NASA's OMI sensor, " + MN[+c.first_day.slice(5, 7) - 1] + " " + c.first_day.slice(0, 4) + " to " + MN[+c.last_day.slice(5, 7) - 1] + " " + c.last_day.slice(0, 4) +
       ". Percent of the season's average level per decade. Range = 95% confidence interval. This is the NO₂ in the whole air column, not street-level smog. Select a season for the evidence.";
   }
 
@@ -444,6 +529,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     if (!isCut) fact("Usable days per season", "median " + pct(s.coverage_median) + ", worst " + pct(s.coverage_min));
     if (!isCut && s.seen_days_trend && s.seen_days_trend.first) fact("Usable days, first and last year", s.seen_days_trend.first + " and " + s.seen_days_trend.last);
     fact("Average level", s.mean.toFixed(2) + " ×10¹⁵/cm²");
+    if (!isCut && s.excess) fact("Faster than desert background (" + s.excess.first_year + "–" + s.excess.last_year + ")", sign(s.excess.slope_pct_decade) + "% per decade, " + (s.excess.verdict === "RISING" ? "clear 🚩" : "not clear"));
     if (s.published) fact("Published study", sign(s.published.slope, 2) + " ± " + s.published.pm.toFixed(2) + " ×10¹⁵/cm² per year");
     $("robust").hidden = isCut;
     var r = c.robustness, bits = Object.keys(r).map(function (lab) {
@@ -460,7 +546,8 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
     var verdictLine = same(full_v) && same(early_v)
       ? " The verdict does not depend on the box size."
       : " The verdict depends on the box size, so read this season with care.";
-    $("robust").textContent = "Does the size of the box change our own test? Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " +
+    if (!c.extended) base = "0.5° box (ours): " + pillInfo(s.own_verdict).text.toLowerCase();
+    $("robust").textContent = "Does the size of the box change our own test? " + (c.extended ? "Compare like with like: the wider boxes have data only to 2020, so set them against our box to 2020. " : "") +
       base + "; " + bits.join("; ") + "." + verdictLine + " A wider box mixes in more of the surrounding region, so the percentages differ." + extra;
   }
 
@@ -569,6 +656,9 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
 
   function renderCompare() {
     var c = D.cities[state.city], t = $("compare");
+    var hasPub = ORDER.some(function (k) { return c.seasons[k].published; });
+    $("compareNone").hidden = hasPub; t.parentNode.hidden = !hasPub;
+    $("compareNone").textContent = "We found no published seasonal NO₂ trend for " + c.name + ", so every verdict for this region is our own test only, marked \u201cone source only\u201d. The published study below covers Tashkent.";
     t.innerHTML = "<thead><tr><th>Season</th><th>Our test, full record</th><th>Our test, 2005–2021</th><th>Published, 2004–2021</th><th>Published ÷ ours, same years</th><th>Verdict</th></tr></thead>";
     var tb = h("tbody");
     ORDER.forEach(function (k) {
@@ -589,7 +679,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   }
 
   function render() {
-    renderTabs(); renderCards(); renderDetail(); drawMonths(); drawCalendar(); renderCompare();
+    renderTabs(); renderRegions(); renderCards(); renderDetail(); drawMonths(); drawCalendar(); renderCompare();
   }
 
   /* ---------- your own CSV ---------- */
@@ -693,7 +783,7 @@ footer { color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--lin
   if (mq.addEventListener) mq.addEventListener("change", render);
   new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   $("foot").textContent = "Results computed " + D.generated + " from " + D.product + ", " + D.first_day + " to " + D.last_day + "." +
-    (D.giovanni ? " Days to " + D.aws_last_day + " come from the open copy on AWS, later days from NASA Giovanni." : "");
+    (D.giovanni ? " Days to " + D.aws_last_day + " come from the open copy on AWS; later days, for Tashkent only so far, from NASA Giovanni." : "");
   fromHash(); render();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawCalendar);
 })();

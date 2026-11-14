@@ -1,6 +1,6 @@
 # BULB-Air
 
-**Is NO₂ over your city really rising?** BULB-Air tests NASA satellite data season by season and says so when the data cannot answer.
+**Is NO₂ over your region really rising?** BULB-Air tests NASA satellite data for all 14 regions of Uzbekistan, season by season, and says so when the data cannot answer.
 
 Built for the NASA Space Apps Challenge 2026, challenge *Be An Earth System Trend Detective!*
 
@@ -17,7 +17,11 @@ Most trend tools draw one line through a whole year and report one number. For a
 
 Percent of the season's average NO₂ column per decade. The verdicts are about the NO₂ column above the city, not street-level air and not PM2.5. Our own test finds a rise in all four seasons; the published study agrees on direction for summer and autumn, disagrees for spring on the shared years 2005–2021, and does not cover the recent winters. Winter NO₂ is about twice the summer level, and the five highest winters of the record are all between 2021 and 2026.
 
-Almaty and Bishkek, tested the same way, also give the other verdicts: Almaty's autumn is NOT PROVEN YET and its winter is SOURCES DISAGREE. All numbers are on the site and in `data/derived/results.json`.
+## All 14 regions (OMI NO₂, 2005 to May 2020)
+
+NO₂ rose over every region, and also over empty desert (Kyzylkum, Ustyurt: about +9% to +17% per decade), so part of every rise is regional background or slow satellite drift. A 🚩 red flag marks a region where, in at least one season, NO₂ rose clearly faster than over the desert. 13 of 14 regions carry one. Seasons with a clear excess: Andijan, Fergana, Namangan, Karshi, Gulistan 4 of 4; Samarkand 3; Tashkent, Almalyk (Tashkent region), Bukhara, Jizzakh, Termez 2; Urgench, Nukus 1; Navoi none. Navoi and Nukus winter are NOT PROVEN YET even before the background is subtracted.
+
+Only Tashkent has a published second source and a record to 2026; the other regions are "one source only" and end in May 2020 until the Giovanni extension is fetched for them. All numbers are on the site and in `data/derived/results.json`.
 
 - **RISING / FALLING**: on the study's own years (2005–2021) our test and the published study both find a clear trend in the same direction, and our full record agrees.
 - **Unconfirmed, one source so far**: our longer record shows a trend that neither source finds in the study's own years (it ends in 2021).

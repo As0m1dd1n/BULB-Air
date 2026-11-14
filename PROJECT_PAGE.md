@@ -32,7 +32,7 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 1. *Identify variables.* We chose one variable with a long NASA record and a clear local question, tropospheric NO₂. Any other Giovanni variable can be tested through the CSV upload, with a sample file to try first.
 2. *Acquire data for a region.* A script reads only the grid cells around each city from NASA's public OMNO2d files, with no login; the years after May 2020 come from NASA Giovanni, cell by cell. A city is added with one line.
 3. *Time series and visualization.* Yearly values per season with the trend line, a monthly chart of usable days, and a day-by-day calendar of what the satellite saw.
-4. *Statistical analysis.* Sen slope, Mann–Kendall test with the Hamed–Rao correction for autocorrelation, 95% confidence interval, Benjamini–Hochberg adjustment across all 12 city-season tests, and the smallest trend likely to be detected (after Weatherhead et al.). The seasonal cycle is removed by testing each season separately and comparing each day with its own month, as the challenge suggests.
+4. *Statistical analysis.* Sen slope, Mann–Kendall test with the Hamed–Rao correction for autocorrelation, 95% confidence interval, Benjamini–Hochberg adjustment across all 56 region-season tests, and the smallest trend likely to be detected (after Weatherhead et al.). The seasonal cycle is removed by testing each season separately and comparing each day with its own month, as the challenge suggests.
 
 **What we found.** Tashkent, 0.5° box, 2005 to 2026:
 
@@ -41,7 +41,7 @@ BULB-Air is a website that tests NASA OMI satellite data so students and journal
 - Summer: +23% (+18% to +30%). Rising; the published study finds the same direction, at 3.5 times our rate on the same years.
 - Autumn: +22% (+15% to +29%). Rising; same direction, 2.1 times our rate on the same years.
 
-With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Almaty shows the other verdicts: autumn is not proven yet, and for winter the sources disagree. In Bishkek NO₂ rose in spring, summer and autumn, and the sources disagree for winter. Our own test for Tashkent gives the same result when only the single grid cell over the city centre is used; with wider boxes cut at 2020, the winter and spring results depend on the box size.
+With the record stopped at 2020, winter and spring are both not proven. The five highest winters of the record all fall between 2021 and 2026. Across all 14 regions of Uzbekistan (2005 to May 2020) NO₂ rose everywhere, and also over empty desert, so we flag a region 🚩 only where NO₂ rose clearly faster than the desert background: 13 of 14 regions, from 4 of 4 seasons (Andijan, Fergana, Namangan, Karshi, Gulistan) down to none (Navoi). Our own test for Tashkent gives the same result when only the single grid cell over the city centre is used; with wider boxes cut at 2020, the winter and spring results depend on the box size.
 
 **Why it matters.** The usual tool gives one slope and one p-value and leaves a student or a journalist to over-read it. BULB-Air teaches the opposite habit with a real local case: ask how much was observed, what size of change could have been detected, whether a second source agrees, and what the same test would have said five years ago.
 

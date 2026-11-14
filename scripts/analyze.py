@@ -48,15 +48,22 @@ ALPHA = 0.05
 UNIT = 1e15                  # report in 10^15 molecules / cm2
 SEASONS = {"DJF": (12, 1, 2), "MAM": (3, 4, 5), "JJA": (6, 7, 8), "SON": (9, 10, 11)}
 SEASON_NAMES = {"DJF": "Winter", "MAM": "Spring", "JJA": "Summer", "SON": "Autumn"}
-CITY_NAMES = {"tashkent": "Tashkent", "almaty": "Almaty", "bishkek": "Bishkek"}
+# All 14 regions of Uzbekistan, one box per regional centre (see METHOD.md section 2)
+CITY_NAMES = {"tashkent": "Tashkent", "almalyk": "Almalyk", "andijan": "Andijan", "bukhara": "Bukhara",
+              "fergana": "Fergana", "jizzakh": "Jizzakh", "namangan": "Namangan", "navoi": "Navoi",
+              "karshi": "Karshi", "samarkand": "Samarkand", "gulistan": "Gulistan", "termez": "Termez",
+              "urgench": "Urgench", "nukus": "Nukus"}
+REGIONS = {"tashkent": "Tashkent city", "almalyk": "Tashkent region", "andijan": "Andijan region",
+           "bukhara": "Bukhara region", "fergana": "Fergana region", "jizzakh": "Jizzakh region",
+           "namangan": "Namangan region", "navoi": "Navoi region", "karshi": "Kashkadarya region",
+           "samarkand": "Samarkand region", "gulistan": "Syrdarya region", "termez": "Surkhandarya region",
+           "urgench": "Khorezm region", "nukus": "Republic of Karakalpakstan"}
 
 # Published comparison: Sharma et al. (2023), Environ. Sci.: Atmos. 3, 905-918, Table S2.
 # Merged OMI (2004-2014) + GOME-2B (2013-2021), Nov 2004 - Mar 2021. Units 1e15 molec/cm2/yr.
 # The paper does not say whether +/- is one or two standard errors.
 PUBLISHED = {
     "tashkent": {"MAM": (0.29, 0.04), "JJA": (0.37, 0.04), "SON": (0.28, 0.06), "DJF": (-0.13, 0.32)},
-    "almaty": {"MAM": (0.04, 0.05), "JJA": (0.10, 0.02), "SON": (-0.04, 0.03), "DJF": (-0.23, 0.11)},
-    "bishkek": {"MAM": (0.08, 0.02), "JJA": (0.04, 0.01), "SON": (0.05, 0.02), "DJF": (-0.06, 0.07)},
 }
 
 
@@ -230,19 +237,25 @@ def main():
     keep = [i for i, d in enumerate(dates) if d <= last_file]
     dates = [dates[i] for i in keep]
     status = [status[i] for i in keep]
-    cities = [str(c) for c in z["cities"]]
-    cuts = {c: z[c][keep].astype("f8") for c in cities}
+    allboxes = [str(c) for c in z["cities"]]
+    cities = [c for c in allboxes if not c.startswith("bg_")]
+    controls = [c for c in allboxes if c.startswith("bg_")]
+    cuts = {c: z[c][keep].astype("f8") for c in allboxes}
     aws_last = dates[-1]
+    dates_aws, status_aws = list(dates), list(status)
 
-    # Optional extension with the same product read through NASA Giovanni, one grid cell at a time
+    # Optional extension with the same product read through NASA Giovanni, one grid cell at a time.
+    # Only regions that have Giovanni columns are extended; the others end with the AWS copy.
     giovanni = None
+    series = {c: (list(dates), list(status), cuts[c]) for c in cities}
     gpath = os.path.join(RAW, "giovanni_cells.csv")
     if os.path.exists(gpath):
         gdates, gcells = read_giovanni(gpath)
+        ext_cities = [c for c in cities if c in gcells]
         index = {d: i for i, d in enumerate(dates)}
         both = one_only = 0
         pa, pb = [], []
-        for c in cities:
+        for c in ext_cities:
             for gi, d in enumerate(gdates):
                 if d in index:
                     a = cuts[c][index[d], 2:4, 2:4]
@@ -253,21 +266,20 @@ def main():
                     pa += list(a[fa & fb])
                     pb += list(b[fa & fb])
         new = [gi for gi, d in enumerate(gdates) if d > aws_last]
-        for c in cities:
+        for c in ext_cities:
             ext = np.full((len(new), cuts[c].shape[1], cuts[c].shape[2]), np.nan)
             ext[:, 2:4, 2:4] = gcells[c][new]
-            cuts[c] = np.concatenate([cuts[c], ext])
-        dates += [gdates[gi] for gi in new]
-        status += ["ok"] * len(new)
-        last_file = dates[-1]
+            series[c] = (dates + [gdates[gi] for gi in new], status + ["ok"] * len(new),
+                         np.concatenate([cuts[c], ext]))
+        last_file = max(series[c][0][-1] for c in cities)
         pa, pb = np.array(pa), np.array(pb)
-        giovanni = dict(first_day=str(gdates[new[0]]), last_day=str(dates[-1]), days=len(new),
+        giovanni = dict(cities=ext_cities, first_day=str(gdates[new[0]]), last_day=str(gdates[new[-1]]), days=len(new),
                         overlap_first=str(gdates[0]), overlap_last=str(aws_last),
                         overlap_cell_days_both_valid=both, overlap_valid_in_one_only=one_only,
                         overlap_correlation=float(np.corrcoef(pa, pb)[0, 1]),
                         overlap_mean_ratio=float(pb.mean() / pa.mean()),
                         overlap_median_abs_difference_1e15=float(np.median(np.abs(pa - pb)) / UNIT))
-        print(f"Giovanni extension: {len(new)} days to {dates[-1]}; overlap {gdates[0]} to {aws_last}: {both} cell-days "
+        print(f"Giovanni extension for {', '.join(ext_cities)}: {len(new)} days to {gdates[new[-1]]}; overlap {gdates[0]} to {aws_last}: {both} cell-days "
               f"valid in both, {one_only} valid in only one; correlation {giovanni['overlap_correlation']:.4f}, "
               f"mean ratio {giovanni['overlap_mean_ratio']:.4f}, median |difference| "
               f"{giovanni['overlap_median_abs_difference_1e15']:.4f}e15")
@@ -286,12 +298,13 @@ def main():
 
     families = {}
     for city in cities:
-        cut = cuts[city]
+        dates, status, cut = series[city]
+        extended = bool(giovanni) and city in giovanni["cities"]
         full, rows, daily = analyse_city(dates, cut, status)
         same, _, _ = analyse_city(dates, cut, status, first=2005, last=2021)   # the paper's period
         ci = list(z["cities"]).index(city)
         robust = {}
-        era = " to 2020 only" if giovanni else ""
+        era = " to 2020 only" if extended else ""
         one = centre_cell_daily(cut, z["centres"][ci], z["west_north"][ci])
         variants = [("1 cell (0.25 deg)", dict(daily=one)), ("4 x 4 cells (1.0 deg)" + era, dict(half=2)),
                     ("6 x 6 cells (1.5 deg)" + era, dict(half=3))]
@@ -317,7 +330,8 @@ def main():
             cal.setdefault(d.year, []).append("-" if st != "ok" else ("1" if np.isfinite(v) else "0"))
         wn = z["west_north"][ci]
         clon, clat = float(wn[0]) + 0.75, float(wn[1]) - 0.75
-        result["cities"][city] = dict(name=CITY_NAMES.get(city, city.title()),
+        result["cities"][city] = dict(name=CITY_NAMES.get(city, city.title()), region=REGIONS.get(city, ""),
+                                      first_day=str(dates[0]), last_day=str(dates[-1]), extended=extended,
                                       centre=[float(v) for v in z["centres"][ci]],
                                       box=dict(west=clon - 0.25, south=clat - 0.25, east=clon + 0.25, north=clat + 0.25),
                                       calendar={str(y): "".join(v) for y, v in cal.items()},
@@ -338,15 +352,66 @@ def main():
 
     # One family across every city and season: the Benjamini-Hochberg adjustment covers all
     # city-season tests shown as verdicts, for the full record and for the study's period.
+    # The study-period tests (2005-2021) are a separate family: only regions with a published trend.
     keys = [(c, s) for c in families for s in SEASONS]
-    for which in (0, 1):
-        adj = ts.benjamini_hochberg([families[c][which][s]["p"] for c, s in keys])
-        for (c, s), pa in zip(keys, adj):
+    pub_keys = [(c, s) for c in families if c in PUBLISHED for s in SEASONS]
+    for which, ks in ((0, keys), (1, pub_keys)):
+        adj = ts.benjamini_hochberg([families[c][which][s]["p"] for c, s in ks])
+        for (c, s), pa in zip(ks, adj):
             r = families[c][which][s]
             r["p_adj_city"] = r["p_adj"]
             r["p_adj"] = float(pa)
             r["own_verdict"] = r["verdict"] = verdict_for(r, pa)
     result["family_size"] = len(keys)
+    # Background: open-desert boxes with no town inside. NO2 rose there too, so part of every
+    # city's rise is regional background or instrument drift. The excess series (city minus the
+    # mean of the background boxes, same season and year) keeps only what the city adds.
+    bg = {}
+    for b in controls:
+        out_b, _, _ = analyse_city(dates_aws, cuts[b], status_aws)
+        bg[b] = out_b
+    background = {}
+    for s in SEASONS:
+        per_year = {}
+        for b in controls:
+            for y, v in zip(bg[b][s]["years"], bg[b][s]["values"]):
+                if v is not None and np.isfinite(v):
+                    per_year.setdefault(y, []).append(v)
+        yrs = sorted(y for y, v in per_year.items() if len(v) >= 2)
+        vals = [float(np.mean(per_year[y])) for y in yrs]
+        r = ts.analyse(yrs, vals, ALPHA)
+        r.update(years=yrs, values=vals, boxes={b: dict(slope=bg[b][s]["slope"], p=bg[b][s]["p"],
+                                                        slope_pct_decade=1000 * bg[b][s]["slope"] / bg[b][s]["mean"])
+                                                for b in controls})
+        r["slope_pct_decade"] = 1000.0 * r["slope"] / r["mean"]
+        background[s] = r
+    ekeys = []
+    for c, (full, _) in families.items():
+        for s in SEASONS:
+            ref = dict(zip(background[s]["years"], background[s]["values"]))
+            pairs = [(y, v - ref[y]) for y, v in zip(full[s]["years"], full[s]["values"])
+                     if y in ref and v is not None and np.isfinite(v)]
+            r = ts.analyse([p[0] for p in pairs], [p[1] for p in pairs], ALPHA)
+            level = full[s]["mean"]
+            r.update(years=[p[0] for p in pairs], values=[p[1] for p in pairs],
+                     slope_pct_decade=1000.0 * r["slope"] / level, ci_low_pct_decade=1000.0 * r["ci_low"] / level,
+                     ci_high_pct_decade=1000.0 * r["ci_high"] / level, mdt_pct_decade=1000.0 * r["mdt"] / level)
+            full[s]["excess"] = r
+            ekeys.append((c, s))
+    adj = ts.benjamini_hochberg([families[c][0][s]["excess"]["p"] for c, s in ekeys])
+    for (c, s), pa in zip(ekeys, adj):
+        r = families[c][0][s]["excess"]
+        r["p_adj"] = float(pa)
+        r["verdict"] = verdict_for(r, pa)
+    result["background"] = dict(boxes={b: dict(centre=[float(v) for v in z["centres"][allboxes.index(b)]],
+                                               name=b[3:].replace("_", " ").title()) for b in controls},
+                                seasons=background)
+    # Red flag: in at least one season the region's NO2 rose clearly faster than the background
+    # (excess test, Benjamini-Hochberg over all region-season excess tests).
+    for c, (full, _) in families.items():
+        rising = [s for s in SEASONS if full[s]["excess"]["verdict"] == "RISING"]
+        result["cities"][c]["flag"] = bool(rising)
+        result["cities"][c]["flag_seasons"] = rising
     for c, (full, same) in families.items():
         for s in SEASONS:
             full[s]["one_source"] = True
