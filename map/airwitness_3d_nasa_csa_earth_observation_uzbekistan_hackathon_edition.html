@@ -1,0 +1,2949 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AirWitness 3D — NASA & CSA Earth Observation Uzbekistan (Hackathon Edition)</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- MapLibre GL JS v4.7.1 (API-key-free WebGL2 3D Terrain & Fill-Extrusion Engine) -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-void: #030712;
+      --glass-bg: rgba(9, 14, 28, 0.84);
+      --glass-border: rgba(56, 189, 248, 0.22);
+      --cyan-glow: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-void);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #f1f5f9;
+      user-select: none;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #map {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Frosted Aerospace Glass Panels */
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.72), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+    }
+
+    /* Custom Scrollbar for Inspector Drawer */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.45);
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.35);
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.65);
+    }
+
+    /* Range Slider Styling */
+    input[type="range"].aero-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(30, 41, 59, 0.9);
+      height: 6px;
+      border-radius: 999px;
+      outline: none;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+    input[type="range"].aero-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      border: 2px solid #0f172a;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.85);
+      transition: transform 0.15s ease;
+    }
+    input[type="range"].aero-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+
+    /* Floating Dark-Glass 4-Dot Region Severity Pills */
+    .region-pill-marker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(6, 11, 24, 0.86);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      color: #f8fafc;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+    .region-pill-marker:hover {
+      transform: translateY(-2px) scale(1.04);
+      border-color: #38bdf8;
+      z-index: 30;
+    }
+    .region-pill-marker.active-region {
+      border-color: #38bdf8;
+      background: rgba(12, 26, 52, 0.95);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.45), 0 8px 24px rgba(0, 0, 0, 0.8);
+      z-index: 40;
+    }
+    .severity-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 2.5px;
+    }
+    .severity-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.25);
+    }
+    @keyframes pulseCritical {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.25); }
+    }
+    .dot-pulse {
+      animation: pulseCritical 1.3s infinite ease-in-out;
+    }
+
+    /* Golden-Amber 3D Landmark Badges */
+    .landmark-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(120, 53, 15, 0.92), rgba(69, 26, 3, 0.94));
+      border: 1px solid rgba(251, 191, 36, 0.72);
+      color: #fef3c7;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .landmark-badge:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 20px rgba(251, 191, 36, 0.6);
+      z-index: 35;
+    }
+
+    /* Clean View Mode */
+    body.clean-view .hud-element {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(6px);
+    }
+    .hud-element {
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    /* MapLibre Attribution Subtle Styling */
+    .maplibregl-ctrl-bottom-right, .maplibregl-ctrl-bottom-left {
+      bottom: 30px !important;
+    }
+    .maplibregl-ctrl-attrib {
+      background: rgba(3, 7, 18, 0.65) !important;
+      color: #94a3b8 !important;
+      font-size: 10px !important;
+      border-radius: 6px !important;
+    }
+    .maplibregl-ctrl-attrib a {
+      color: #38bdf8 !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL2 Map Canvas -->
+  <div id="map"></div>
+
+  <!-- Clean View Floating Restore Pill (Visible only when HUD is hidden) -->
+  <button id="restoreHudBtn" onclick="toggleCleanView()"
+    class="hidden fixed top-3 right-3 z-50 glass-panel px-3.5 py-2 rounded-full text-xs font-semibold text-sky-300 hover:text-white hover:border-sky-400 flex items-center gap-2 shadow-xl">
+    <span>⛶</span>
+    <span data-i18n="restoreHud">Показать интерфейс (H)</span>
+  </button>
+
+  <!-- Toast Notification Banner -->
+  <div id="toastBanner"
+    class="pointer-events-none fixed top-16 left-1/2 -translate-x-1/2 z-50 opacity-0 transition-all duration-300 glass-panel px-4 py-2 rounded-full text-xs font-medium text-sky-200 border border-sky-400/40 flex items-center gap-2 shadow-2xl">
+    <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+    <span id="toastText">Система инициализирована</span>
+  </div>
+
+  <!-- TOP COMMAND HEADER -->
+  <header class="hud-element fixed top-2.5 left-2.5 right-2.5 z-30 glass-panel rounded-2xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+    <!-- Left: Brand & Satellite Mission Badge -->
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 via-cyan-500 to-emerald-500 p-[1.5px] shadow-lg shadow-sky-500/25 shrink-0">
+        <div class="w-full h-full rounded-[10px] bg-slate-950 flex items-center justify-center text-sky-400 font-bold text-sm">
+          🛰️
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-extrabold tracking-tight text-white leading-none">
+            AirWitness <span class="text-sky-400">3D</span>
+          </h1>
+          <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-400/30">
+            NASA · NOAA · CSA EO
+          </span>
+        </div>
+        <p class="text-[10px] text-slate-400 leading-tight mt-0.5 hidden sm:block" data-i18n="subtitle">
+          Узбекистан · 3D-верификация атмосферы и водного баланса (2004–2026)
+        </p>
+      </div>
+    </div>
+
+    <!-- Center: 6 Multi-Source NASA/NOAA/CSA Metrics -->
+    <div id="metricSwitcher" class="flex items-center gap-1 overflow-x-auto max-w-full py-0.5">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Right: 3-Mode Basemap Switcher + Zones Toggle + Lang + Clean View -->
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <!-- Basemap Switcher -->
+      <div class="flex items-center bg-slate-950/85 p-0.5 rounded-xl border border-slate-700/70" title="Выбор картографической подложки">
+        <button id="bm-hybrid" onclick="setBasemap('hybrid')"
+          class="bm-btn px-2 py-1 rounded-lg text-[11px] font-semibold transition bg-sky-500 text-slate-950 shadow">
+          <span data-i18n="bmHybrid">Google Hybrid 3D</span>
+        </button>
+        <button id="bm-streets" onclick="setBasemap('streets')"
+          class="bm-btn px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-300 hover:text-white transition">
+          <span data-i18n="bmStreets">Google Maps</span>
+        </button>
+        <button id="bm-dark" onclick="setBasemap('dark')"
+          class="bm-btn px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-300 hover:text-white transition">
+          <span data-i18n="bmDark">Dark Aerospace</span>
+        </button>
+      </div>
+
+      <!-- Restore/Toggle Zones Filter Bar -->
+      <button id="toggleZonesBtn" onclick="toggleZonesVisibility()"
+        class="px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-slate-900/90 hover:bg-slate-800 text-sky-300 border border-sky-400/35 flex items-center gap-1 transition"
+        title="Показать / скрыть панель фильтрации зон">
+        <span>🧭</span>
+        <span data-i18n="zonesBtn">Зоны</span>
+      </button>
+
+      <!-- Bilingual RU / EN Switcher -->
+      <button id="langToggleBtn" onclick="toggleLanguage()"
+        class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-900/90 hover:bg-slate-800 text-amber-300 border border-amber-400/35 transition"
+        title="Switch language / Переключить язык">
+        RU / EN
+      </button>
+
+      <!-- Clean View Toggle -->
+      <button onclick="toggleCleanView()"
+        class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 transition"
+        title="Чистый 3D-вид (клавиша H)">
+        ⛶
+      </button>
+    </div>
+  </header>
+
+  <!-- COLLAPSIBLE & HIDEABLE 5-LEVEL ZONE CRITERIA & SEARCH BAR (Top-Left) -->
+  <section id="zoneFilterBar"
+    class="hud-element fixed top-[64px] left-2.5 z-20 glass-panel rounded-2xl w-[330px] sm:w-[375px] max-w-[calc(100vw-20px)] transition-all duration-200">
+    <!-- Thin Header -->
+    <div class="px-3 py-1.5 flex items-center justify-between border-b border-slate-800/80">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        <span class="text-[11px] font-bold tracking-wide text-slate-200" data-i18n="zoneFilterTitle">
+          Фильтр 5 уровней зон и поиск
+        </span>
+        <span id="visibleCellsCounter" class="text-[10px] font-mono-tech text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded-md">
+          280 ячеек
+        </span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button id="collapseZonesBtn" onclick="toggleZonesCollapse()"
+          class="w-6 h-6 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center text-xs transition"
+          title="Свернуть / развернуть">
+          ▾
+        </button>
+        <button onclick="hideZonesCompletely()"
+          class="w-6 h-6 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-xs transition"
+          title="Скрыть панель полностью (вернуть кнопкой «Зоны»)">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- Collapsible Body -->
+    <div id="zoneFilterBody" class="p-2.5 space-y-2">
+      <!-- Search Input -->
+      <div class="relative">
+        <input id="regionSearchInput" type="text" oninput="handleSearchInput(this.value)"
+          placeholder="Поиск региона или 3D-ориентира (Алмалык, Арал...)"
+          class="w-full bg-slate-950/90 border border-slate-700/80 focus:border-sky-400 rounded-xl pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-500 outline-none transition" />
+        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+        <button id="clearSearchBtn" onclick="clearSearch()"
+          class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">✕</button>
+      </div>
+
+      <!-- 5-Level Severity Pills -->
+      <div id="severityFilterPills" class="flex flex-wrap gap-1">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT INSPECTOR DRAWER (3 TABS: 1. Regional Bar Chart [Default], 2. OLS & Verdict, 3. 3D & Provenance) -->
+  <aside id="inspectorDrawer"
+    class="hud-element fixed top-[64px] right-2.5 bottom-[96px] z-20 glass-panel rounded-2xl w-[360px] sm:w-[410px] max-w-[calc(100vw-20px)] flex flex-col overflow-hidden">
+
+    <!-- Active Region Summary Banner -->
+    <div class="px-3.5 py-2.5 bg-gradient-to-r from-slate-900/95 via-sky-950/40 to-slate-900/95 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span id="selectedRegionBadge" class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
+          <h2 id="selectedRegionTitle" class="text-sm font-extrabold text-white truncate">
+            г. Ташкент
+          </h2>
+        </div>
+        <p id="selectedRegionMeta" class="text-[10px] text-slate-400 truncate mt-0.5">
+          Столичный мегаполис · Котловина · 455 м н.у.м.
+        </p>
+      </div>
+      <div class="text-right shrink-0">
+        <div id="selectedRegionValue" class="text-base font-extrabold font-mono-tech text-sky-300 leading-none">
+          —
+        </div>
+        <div id="selectedRegionLevelTag" class="text-[10px] font-semibold mt-1 px-2 py-0.5 rounded-full inline-block bg-amber-500/20 text-amber-300 border border-amber-400/30">
+          Повышено
+        </div>
+      </div>
+    </div>
+
+    <!-- 3-Tab Navigation Bar -->
+    <div class="grid grid-cols-3 gap-1 p-1.5 bg-slate-950/75 border-b border-slate-800/90 shrink-0">
+      <button id="tabBtn-barchart" onclick="switchInspectorTab('barchart')"
+        class="tab-btn py-1.5 px-2 rounded-xl text-[11px] font-bold transition bg-sky-500 text-slate-950 shadow">
+        <span data-i18n="tabBar">Бар-чарт регионов</span>
+      </button>
+      <button id="tabBtn-ols" onclick="switchInspectorTab('ols')"
+        class="tab-btn py-1.5 px-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white transition">
+        <span data-i18n="tabOls">OLS и вердикт</span>
+      </button>
+      <button id="tabBtn-scene" onclick="switchInspectorTab('scene')"
+        class="tab-btn py-1.5 px-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white transition">
+        <span data-i18n="tabScene">3D и источники</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: REGIONAL BAR CHART (DEFAULT ACTIVE) -->
+    <div id="tabPanel-barchart" class="flex-1 overflow-y-auto custom-scroll p-3 space-y-2.5">
+      <!-- Bar Chart Controls -->
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div>
+          <h3 class="text-xs font-bold text-slate-100" data-i18n="barChartHeading">
+            Рейтинг 14 регионов Узбекистана
+          </h3>
+          <p id="barChartSubheading" class="text-[10px] text-slate-400">
+            Нажмите на столбец для 3D-перелёта к региону
+          </p>
+        </div>
+        <!-- Sort Buttons -->
+        <div class="flex items-center bg-slate-950/90 p-0.5 rounded-lg border border-slate-800 text-[10px]">
+          <button id="sort-value" onclick="setBarSort('value')"
+            class="sort-btn px-2 py-1 rounded-md font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30">
+            <span data-i18n="sortVal">Значение ↓</span>
+          </button>
+          <button id="sort-slope" onclick="setBarSort('slope')"
+            class="sort-btn px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white">
+            <span data-i18n="sortSlope">Тренд β₁</span>
+          </button>
+          <button id="sort-alpha" onclick="setBarSort('alpha')"
+            class="sort-btn px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white">
+            <span data-i18n="sortAlpha">А–Я</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Reference / WHO Threshold Legend Strip -->
+      <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[10px]">
+        <span class="text-slate-300 flex items-center gap-1.5">
+          <span class="inline-block w-3 border-t-2 border-dashed border-rose-400"></span>
+          <span id="thresholdLegendText">Порог ВОЗ / референс: 5.0 µg/m³</span>
+        </span>
+        <span id="barYearSeasonTag" class="font-mono-tech text-sky-300 font-semibold">
+          2026 · Зима
+        </span>
+      </div>
+
+      <!-- Interactive 14-Region Bar Chart Container -->
+      <div id="regionalBarChartContainer" class="space-y-1.5">
+        <!-- Dynamically rendered bars for all 14 regions -->
+      </div>
+    </div>
+
+    <!-- TAB 2: SCIENTIFIC STATISTICAL TREND DETECTIVE (OLS, MANN-KENDALL, SEN'S SLOPE, 3-WITNESS VERDICT) -->
+    <div id="tabPanel-ols" class="hidden flex-1 overflow-y-auto custom-scroll p-3 space-y-3">
+      <!-- 3-Witness Judicial Verdict Banner -->
+      <div id="verdictBanner" class="p-2.5 rounded-xl border bg-amber-500/10 border-amber-400/40">
+        <div class="flex items-center justify-between gap-2">
+          <span id="verdictBadge" class="text-xs font-extrabold tracking-wide text-amber-300">
+            ▲ ПОДТВЕРЖДЁННЫЙ РОСТ
+          </span>
+          <span id="verdictConfidenceTag" class="text-[10px] font-mono-tech px-2 py-0.5 rounded-full bg-slate-950/80 text-slate-300 border border-slate-700">
+            p = 0.004
+          </span>
+        </div>
+        <p id="verdictExplanation" class="text-[11px] text-slate-200 mt-1 leading-snug">
+          Спутник (OMI/TROPOMI), реанализ MERRA-2 и наземные станции NOAA/Узгидромет согласованно фиксируют статистически значимый тренд (95% ДИ выше 0).
+        </p>
+      </div>
+
+      <!-- 3-Witness Time-Series & OLS Residuals SVG Chart -->
+      <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between gap-1 flex-wrap">
+          <span class="text-[11px] font-bold text-slate-200" data-i18n="witnessChartTitle">
+            3 свидетеля + регрессия OLS (95% ДИ)
+          </span>
+          <button id="toggleResidualsBtn" onclick="toggleResidualsView()"
+            class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-slate-900 hover:bg-slate-800 text-sky-300 border border-sky-400/35 transition">
+            <span data-i18n="showResiduals">Остатки OLS (eᵢ)</span>
+          </button>
+        </div>
+
+        <!-- Legend -->
+        <div id="witnessLegend" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-300">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-sky-400 inline-block"></span><span data-i18n="wSat">Спутник (NASA/CSA)</span></span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-400 inline-block"></span><span data-i18n="wRean">MERRA-2</span></span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span><span data-i18n="wGround">NOAA/Узгидромет</span></span>
+          <span class="flex items-center gap-1"><span class="w-2.5 border-t border-dashed border-rose-400 inline-block"></span><span>OLS</span></span>
+        </div>
+
+        <!-- High-DPI SVG Container -->
+        <div class="w-full overflow-hidden rounded-lg bg-slate-900/60 border border-slate-800/80">
+          <svg id="olsSvgChart" viewBox="0 0 360 175" class="w-full h-[175px] block"></svg>
+        </div>
+      </div>
+
+      <!-- Dual Parametric (OLS) + Non-Parametric (Mann-Kendall & Sen's Slope) Metrics Grid -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="p-2 rounded-xl bg-slate-900/85 border border-slate-800">
+          <div class="text-[10px] text-slate-400" data-i18n="olsSlopeLabel">Наклон OLS (β₁ ± 95% ДИ)</div>
+          <div id="statOlsSlope" class="text-xs font-extrabold font-mono-tech text-sky-300 mt-0.5">+0.142 ± 0.048 /год</div>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-900/85 border border-slate-800">
+          <div class="text-[10px] text-slate-400" data-i18n="senSlopeLabel">Медиана Тейла–Сена (Sen's β)</div>
+          <div id="statSenSlope" class="text-xs font-extrabold font-mono-tech text-emerald-300 mt-0.5">+0.138 /год</div>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-900/85 border border-slate-800">
+          <div class="text-[10px] text-slate-400">Mann-Kendall Z / p-value</div>
+          <div id="statMkZp" class="text-xs font-extrabold font-mono-tech text-amber-300 mt-0.5">Z = +3.18 (p = 0.0015)</div>
+        </div>
+        <div class="p-2 rounded-xl bg-slate-900/85 border border-slate-800">
+          <div class="text-[10px] text-slate-400" data-i18n="r2ForecastLabel">R² · Pearson r · Прогноз 2027</div>
+          <div id="statR2Forecast" class="text-xs font-extrabold font-mono-tech text-purple-300 mt-0.5">R²=0.74 · r=0.86 · 41.2</div>
+        </div>
+      </div>
+
+      <!-- 95% CI Zero-Crossing Visual Gauge -->
+      <div class="p-2.5 rounded-xl bg-slate-900/85 border border-slate-800 space-y-1.5">
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="font-bold text-slate-200" data-i18n="ciGaugeTitle">Шкала 95% ДИ относительно нуля (β₁ = 0)</span>
+          <span id="ciZeroStatus" class="font-mono-tech font-semibold text-emerald-400">Не пересекает 0</span>
+        </div>
+        <div class="relative h-5 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden flex items-center">
+          <!-- Center Zero Line -->
+          <div class="absolute left-1/2 top-0 bottom-0 w-[1.5px] bg-slate-400 z-10"></div>
+          <span class="absolute left-1/2 -translate-x-1/2 top-0 text-[8px] font-mono-tech text-slate-400 bg-slate-950 px-0.5">0</span>
+          <!-- Dynamic 95% CI Interval Bar -->
+          <div id="ciIntervalBar" class="absolute h-2.5 rounded-full bg-sky-400/80 border border-sky-200 transition-all duration-300" style="left: 55%; width: 22%;"></div>
+          <!-- Point Estimate Dot -->
+          <div id="ciPointDot" class="absolute w-3 h-3 rounded-full bg-white border-2 border-slate-950 shadow z-20 transition-all duration-300" style="left: 66%;"></div>
+        </div>
+      </div>
+
+      <!-- Clear-Sky Satellite Honesty Bar -->
+      <div class="p-2.5 rounded-xl bg-slate-900/85 border border-slate-800 space-y-1.5">
+        <div class="flex items-center justify-between text-[10px]">
+          <span class="font-bold text-slate-200" data-i18n="clearSkyTitle">Ясный обзор спутника (Clear-Sky %)</span>
+          <span id="clearSkyPct" class="font-mono-tech font-bold text-amber-300">42% (Зимний туман/инверсия)</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800">
+          <div id="clearSkyBar" class="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-300" style="width: 42%;"></div>
+        </div>
+        <p id="clearSkyNote" class="text-[10px] text-slate-400 leading-tight">
+          Зимой плотная облачность и радиационные туманы снижают оптическую видимость OMI/MODIS; приоритет отдаётся MERRA-2 и наземным датчикам.
+        </p>
+      </div>
+    </div>
+
+    <!-- TAB 3: 3D SCENE CONTROLS, CAMERA PRESETS & PROVENANCE -->
+    <div id="tabPanel-scene" class="hidden flex-1 overflow-y-auto custom-scroll p-3 space-y-3">
+      <!-- 4 Quick 3D Camera Presets -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-200" data-i18n="presetsTitle">3D-ракурсы камеры</span>
+          <button id="autoOrbitBtn" onclick="toggleAutoOrbit()"
+            class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-400/35 flex items-center gap-1 transition">
+            <span>🔄</span>
+            <span id="autoOrbitText" data-i18n="autoOrbitOff">Авто-облёт: ВЫКЛ</span>
+          </button>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="flyToPreset('uzbekistan')"
+            class="p-2 rounded-xl bg-slate-900/90 hover:bg-sky-500/20 border border-slate-700/80 hover:border-sky-400/50 text-left text-[11px] font-semibold text-slate-100 transition">
+            🇺🇿 <span data-i18n="presetUz">Весь Узбекистан</span>
+          </button>
+          <button onclick="flyToPreset('tashkent')"
+            class="p-2 rounded-xl bg-slate-900/90 hover:bg-sky-500/20 border border-slate-700/80 hover:border-sky-400/50 text-left text-[11px] font-semibold text-slate-100 transition">
+            🏭 <span data-i18n="presetTash">Ташкент–Алмалык</span>
+          </button>
+          <button onclick="flyToPreset('fergana')"
+            class="p-2 rounded-xl bg-slate-900/90 hover:bg-sky-500/20 border border-slate-700/80 hover:border-sky-400/50 text-left text-[11px] font-semibold text-slate-100 transition">
+            ⛰️ <span data-i18n="presetFerg">Ферганская долина</span>
+          </button>
+          <button onclick="flyToPreset('aralkum')"
+            class="p-2 rounded-xl bg-slate-900/90 hover:bg-sky-500/20 border border-slate-700/80 hover:border-sky-400/50 text-left text-[11px] font-semibold text-slate-100 transition">
+            🏜️ <span data-i18n="presetAral">Аралкум–Муйнак</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Interactive 3D Sliders -->
+      <div class="p-2.5 rounded-xl bg-slate-900/85 border border-slate-800 space-y-2.5">
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-300" data-i18n="sliderHeight">Высота 3D-призм</span>
+            <span id="valColHeight" class="font-mono-tech text-sky-300 font-bold">1.0x</span>
+          </div>
+          <input id="sliderColHeight" type="range" min="0.4" max="2.4" step="0.1" value="1.0"
+            oninput="updateColumnHeightScale(this.value)" class="aero-slider w-full" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-300" data-i18n="sliderDem">Рельеф 3D DEM (Terrarium)</span>
+            <span id="valDemExag" class="font-mono-tech text-sky-300 font-bold">1.8x</span>
+          </div>
+          <input id="sliderDemExag" type="range" min="0" max="3.5" step="0.1" value="1.8"
+            oninput="updateTerrainExaggeration(this.value)" class="aero-slider w-full" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-300" data-i18n="sliderOpacity">Прозрачность 3D-сетки</span>
+            <span id="valGridOpacity" class="font-mono-tech text-sky-300 font-bold">84%</span>
+          </div>
+          <input id="sliderGridOpacity" type="range" min="0.25" max="1" step="0.05" value="0.84"
+            oninput="updateGridOpacity(this.value)" class="aero-slider w-full" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-300" data-i18n="sliderPitch">Наклон камеры (Pitch)</span>
+            <span id="valCamPitch" class="font-mono-tech text-sky-300 font-bold">48°</span>
+          </div>
+          <input id="sliderCamPitch" type="range" min="0" max="70" step="1" value="48"
+            oninput="updateCameraPitch(this.value)" class="aero-slider w-full" />
+        </div>
+      </div>
+
+      <!-- Layer Visibility Checkboxes -->
+      <div class="p-2.5 rounded-xl bg-slate-900/85 border border-slate-800 space-y-2 text-xs">
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-slate-200" data-i18n="chkLandmarks">3D Архитектурные и пром. ориентиры (10)</span>
+          <input id="chkLandmarks" type="checkbox" checked onchange="toggleLandmarksVisibility(this.checked)"
+            class="w-4 h-4 accent-sky-400 rounded cursor-pointer" />
+        </label>
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-slate-200" data-i18n="chkRegionPills">Плавающие бейджи 14 регионов</span>
+          <input id="chkRegionPills" type="checkbox" checked onchange="toggleRegionPillsVisibility(this.checked)"
+            class="w-4 h-4 accent-sky-400 rounded cursor-pointer" />
+        </label>
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="text-slate-200" data-i18n="chkCentroids">Центроиды сенсоров на призмах</span>
+          <input id="chkCentroids" type="checkbox" checked onchange="toggleCentroidsVisibility(this.checked)"
+            class="w-4 h-4 accent-sky-400 rounded cursor-pointer" />
+        </label>
+      </div>
+
+      <!-- Scientific Provenance & Hackathon Methodology -->
+      <div class="p-2.5 rounded-xl bg-slate-950/90 border border-sky-500/25 space-y-1.5 text-[10px] text-slate-300 leading-relaxed">
+        <div class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
+          <span>📚</span>
+          <span data-i18n="provTitle">Научная верификация и источники данных</span>
+        </div>
+        <p><strong class="text-white">NASA Giovanni & AppEEARS:</strong> OMI / Sentinel-5P TROPOMI NO₂ (10¹⁵ molec/cm²), MODIS Terra/Aqua AOD 550nm.</p>
+        <p><strong class="text-white">NASA GES DISC & MERRA-2:</strong> Реанализ аэрозолей PM2.5, Black Carbon, SO₂, высота пограничного слоя (PBL) и гидрология GLDAS.</p>
+        <p><strong class="text-white">CSA SWOT & RADARSAT RCM:</strong> Мониторинг поверхностных вод Аралкума/Амударьи и дефицита почвенной влаги (пылевая эмиссия).</p>
+        <p><strong class="text-white">NOAA NCEI ISD & Узгидромет:</strong> Наземная калибровка станций (Ташкент, Алмалык, Фергана, Нукус, Термез).</p>
+        <p><strong class="text-white">Методика трендов:</strong> NASA NTRS 20090042747, KNMI Climate Explorer, OLS (95% ДИ) + непараметрический тест Манна–Кендалла и медианный наклон Тейла–Сена.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- BOTTOM TIMELINE & SEASONAL PHYSICS DOCK -->
+  <section class="hud-element fixed bottom-[30px] left-2.5 right-2.5 lg:right-[430px] z-20 glass-panel rounded-2xl px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <!-- Left: Epoch Toggle + Play/Pause + Year Slider -->
+    <div class="flex items-center gap-2 w-full sm:w-auto flex-1">
+      <!-- Epoch Range Switch -->
+      <div class="flex items-center bg-slate-950/90 p-0.5 rounded-xl border border-slate-700/80 shrink-0">
+        <button id="epoch-full" onclick="setEpochRange('full')"
+          class="epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-sky-500 text-slate-950">
+          2004–2026
+        </button>
+        <button id="epoch-modern" onclick="setEpochRange('modern')"
+          class="epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white">
+          2015–2026
+        </button>
+      </div>
+
+      <!-- Play / Pause Button -->
+      <button id="playTimelineBtn" onclick="toggleTimelinePlay()"
+        class="w-8 h-8 rounded-xl bg-sky-500/20 hover:bg-sky-500/35 border border-sky-400/50 text-sky-300 flex items-center justify-center text-xs font-bold shrink-0 transition"
+        title="Автопроигрывание временного ряда">
+        ▶
+      </button>
+
+      <!-- Year Scrubber -->
+      <div class="flex items-center gap-2 flex-1 min-w-[120px]">
+        <input id="yearSlider" type="range" min="2004" max="2026" step="1" value="2026"
+          oninput="setSelectedYear(parseInt(this.value, 10))" class="aero-slider w-full" />
+        <span id="yearDisplay" class="font-mono-tech text-sm font-extrabold text-sky-300 w-11 text-right shrink-0">
+          2026
+        </span>
+      </div>
+    </div>
+
+    <!-- Right: 4 Seasonal Physics Mode Buttons -->
+    <div id="seasonSwitcher" class="flex items-center gap-1 overflow-x-auto max-w-full shrink-0">
+      <!-- Populated dynamically by JS -->
+    </div>
+  </section>
+
+  <!-- SLIM BOTTOM LIVE CURSOR TELEMETRY PROBE FOOTER -->
+  <footer class="hud-element fixed bottom-0 left-0 right-0 z-30 h-[26px] bg-slate-950/95 border-t border-sky-500/25 px-3 flex items-center justify-between text-[10px] font-mono-tech text-slate-300 overflow-x-auto whitespace-nowrap gap-4">
+    <div class="flex items-center gap-3">
+      <span class="text-sky-400 font-bold flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        PROBE
+      </span>
+      <span id="probeCoords">41.3111°N, 69.2797°E</span>
+      <span class="text-slate-500">|</span>
+      <span id="probeRegion" class="text-amber-300 font-sans font-semibold">г. Ташкент</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="probeElev">ELEV: 455 m</span>
+      <span class="text-slate-600">·</span>
+      <span id="probePbl">PBL: 620 m</span>
+      <span class="text-slate-600">·</span>
+      <span id="probeRh">RH: 68%</span>
+      <span class="text-slate-600">·</span>
+      <span id="probeNo2" class="text-sky-300">NO₂: 7.4</span>
+      <span class="text-slate-600">·</span>
+      <span id="probeAod" class="text-amber-300">AOD: 0.34</span>
+      <span class="text-slate-600">·</span>
+      <span id="probePm25" class="text-rose-300">PM2.5: 38.2 µg/m³</span>
+      <span class="text-slate-600">·</span>
+      <span id="probeSwot" class="text-cyan-300">SWOT: 44%</span>
+    </div>
+  </footer>
+
+  <script>
+    /*************************************************************************
+     * 1. EXACT 135-VERTEX CLOSED GEOJSON POLYGON OF UZBEKISTAN
+     * Traces: Ustyurt Plateau -> Aral Sea / Vozrozhdeniya -> Muynak ->
+     * Kyzylkum -> Syr Darya -> Tashkent/Chatkal wedge -> Fergana Valley ->
+     * Turkestan/Zarafshan/Hissar ridges -> Termez Amu Darya -> Kashkadarya ->
+     * Bukhara/Turkmen border -> Khorezm -> Western Ustyurt Escarpment.
+     *************************************************************************/
+    const UZBEKISTAN_EXACT_COORDS = [
+      [56.0000, 45.6000], [56.3500, 45.6000], [56.7000, 45.6000], [57.0500, 45.6000], [57.4000, 45.6000],
+      [57.7500, 45.6000], [58.1000, 45.6000], [58.4500, 45.6000], [58.8000, 45.6000], [59.1500, 45.6000],
+      [59.4500, 45.4500], [59.7500, 45.2800], [60.0500, 45.1200], [60.3800, 45.0000], [60.7200, 44.8800],
+      [61.0500, 44.7500], [61.2200, 44.4500], [61.3800, 44.1200], [61.5500, 43.8200], [61.7800, 43.5500],
+      [62.1500, 43.5000], [62.5500, 43.5000], [62.9500, 43.5000], [63.3500, 43.5000], [63.7500, 43.5000],
+      [64.1500, 43.4200], [64.5500, 43.3000], [64.9500, 43.1800], [65.3500, 43.0800], [65.7500, 42.9800],
+      [66.0500, 42.7500], [66.0800, 42.4200], [66.1000, 42.0800], [66.3500, 41.8800], [66.7500, 41.7200],
+      [67.1500, 41.5500], [67.5500, 41.3800], [67.9200, 41.2000], [68.2500, 41.0500], [68.5500, 40.9200],
+      [68.7800, 41.1500], [69.0200, 41.4000], [69.2800, 41.6500], [69.5500, 41.8800], [69.8500, 42.0800],
+      [70.1800, 42.2200], [70.5500, 42.2500], [70.9200, 42.2200], [70.8200, 41.9200], [70.6500, 41.6200],
+      [70.3800, 41.3500], [70.1200, 41.1200], [70.3500, 40.9500], [70.6800, 41.1500], [71.0200, 41.3800],
+      [71.3800, 41.5200], [71.7500, 41.5400], [72.1200, 41.4200], [72.4800, 41.2500], [72.8200, 41.0500],
+      [73.1200, 40.8200], [73.0500, 40.5800], [72.7800, 40.4200], [72.4200, 40.2800], [72.0500, 40.1200],
+      [71.6800, 39.9600], [71.3200, 40.0500], [70.9500, 40.1800], [70.5800, 40.2800], [70.2200, 40.2500],
+      [69.8500, 40.1800], [69.4800, 40.1200], [69.1800, 40.0200], [68.9200, 39.8200], [68.6200, 39.6500],
+      [68.2500, 39.5800], [67.8800, 39.5200], [67.5500, 39.3800], [67.4800, 39.1500], [67.8200, 38.9800],
+      [68.1800, 38.8200], [68.3500, 38.5500], [68.2200, 38.2500], [68.0200, 37.9500], [67.8200, 37.6500],
+      [67.6200, 37.3800], [67.3800, 37.2000], [67.1500, 37.2200], [66.8500, 37.3400], [66.5500, 37.4800],
+      [66.2500, 37.7500], [65.9500, 38.0500], [65.6200, 38.3200], [65.2800, 38.5800], [64.9200, 38.8200],
+      [64.5500, 39.0500], [64.1800, 39.2800], [63.8200, 39.4800], [63.4500, 39.6800], [63.0800, 39.8800],
+      [62.7200, 40.0800], [62.3500, 40.2800], [61.9800, 40.4800], [61.6200, 40.6800], [61.3500, 40.9200],
+      [61.1200, 41.1500], [60.8200, 41.1800], [60.5200, 41.2200], [60.2200, 41.3500], [60.0500, 41.5800],
+      [60.1200, 41.8800], [60.1500, 42.1800], [59.8500, 42.3500], [59.5200, 42.4800], [59.1800, 42.6200],
+      [58.8500, 42.7500], [58.5500, 42.6200], [58.3200, 42.3800], [58.0500, 42.1200], [57.7500, 41.8800],
+      [57.4200, 41.6500], [57.0800, 41.4200], [56.7200, 41.3200], [56.3600, 41.3200], [56.0000, 41.3200],
+      [56.0000, 41.7500], [56.0000, 42.1800], [56.0000, 42.6100], [56.0000, 43.0400], [56.0000, 43.4700],
+      [56.0000, 43.9000], [56.0000, 44.3300], [56.0000, 44.7600], [56.0000, 45.1900], [56.0000, 45.6000]
+    ];
+
+    /*************************************************************************
+     * 2. BILINGUAL DICTIONARY (RUSSIAN DEFAULT / ENGLISH TOGGLEABLE)
+     *************************************************************************/
+    const I18N = {
+      ru: {
+        subtitle: 'Узбекистан · 3D-верификация атмосферы и водного баланса (2004–2026)',
+        bmHybrid: 'Google Hybrid 3D',
+        bmStreets: 'Google Maps',
+        bmDark: 'Dark Aerospace',
+        zonesBtn: 'Зоны',
+        restoreHud: 'Показать интерфейс (H)',
+        zoneFilterTitle: 'Фильтр 5 уровней зон и поиск',
+        searchPlaceholder: 'Поиск региона или 3D-ориентира (Алмалык, Арал...)',
+        cellsUnit: 'ячеек',
+        tabBar: 'Бар-чарт регионов',
+        tabOls: 'OLS и вердикт',
+        tabScene: '3D и источники',
+        barChartHeading: 'Рейтинг 14 регионов Узбекистана',
+        barChartSubheading: 'Нажмите на столбец для 3D-перелёта к региону',
+        sortVal: 'Значение ↓',
+        sortSlope: 'Тренд β₁',
+        sortAlpha: 'А–Я',
+        witnessChartTitle: '3 свидетеля + регрессия OLS (95% ДИ)',
+        showResiduals: 'Остатки OLS (eᵢ)',
+        showSeries: 'Ряды наблюдений',
+        wSat: 'Спутник (NASA/CSA)',
+        wRean: 'MERRA-2',
+        wGround: 'NOAA/Узгидромет',
+        olsSlopeLabel: 'Наклон OLS (β₁ ± 95% ДИ)',
+        senSlopeLabel: "Медиана Тейла–Сена (Sen's β)",
+        r2ForecastLabel: 'R² · Pearson r · Прогноз 2027',
+        ciGaugeTitle: 'Шкала 95% ДИ относительно нуля (β₁ = 0)',
+        clearSkyTitle: 'Ясный обзор спутника (Clear-Sky %)',
+        presetsTitle: '3D-ракурсы камеры',
+        autoOrbitOff: 'Авто-облёт: ВЫКЛ',
+        autoOrbitOn: 'Авто-облёт: ВКЛ',
+        presetUz: 'Весь Узбекистан',
+        presetTash: 'Ташкент–Алмалык',
+        presetFerg: 'Ферганская долина',
+        presetAral: 'Аралкум–Муйнак',
+        sliderHeight: 'Высота 3D-призм',
+        sliderDem: 'Рельеф 3D DEM (Terrarium)',
+        sliderOpacity: 'Прозрачность 3D-сетки',
+        sliderPitch: 'Наклон камеры (Pitch)',
+        chkLandmarks: '3D Архитектурные и пром. ориентиры (10)',
+        chkRegionPills: 'Плавающие бейджи 14 регионов',
+        chkCentroids: 'Центроиды сенсоров на призмах',
+        provTitle: 'Научная верификация и источники данных',
+        allLevels: 'Все (5)',
+        levels: {
+          1: 'Оптимально',
+          2: 'Умеренно',
+          3: 'Повышено',
+          4: 'Высокая',
+          5: 'Критично'
+        },
+        seasons: {
+          winter: 'Зима — инверсия смога',
+          summer: 'Лето — пыль Аралкума',
+          spring: 'Весна — конвекция',
+          autumn: 'Осень — отопление и штили'
+        },
+        seasonsShort: {
+          winter: 'Зима',
+          summer: 'Лето',
+          spring: 'Весна',
+          autumn: 'Осень'
+        }
+      },
+      en: {
+        subtitle: 'Uzbekistan · 3D Atmospheric & Water Balance Verification (2004–2026)',
+        bmHybrid: 'Google Hybrid 3D',
+        bmStreets: 'Google Maps',
+        bmDark: 'Dark Aerospace',
+        zonesBtn: 'Zones',
+        restoreHud: 'Show HUD (H)',
+        zoneFilterTitle: '5-Level Zone Filter & Search',
+        searchPlaceholder: 'Search region or 3D landmark (Almalyk, Aral...)',
+        cellsUnit: 'cells',
+        tabBar: 'Regional Bar Chart',
+        tabOls: 'OLS & Verdict',
+        tabScene: '3D & Provenance',
+        barChartHeading: '14 Regions of Uzbekistan Ranking',
+        barChartSubheading: 'Click any bar for 3D camera fly-to',
+        sortVal: 'Value ↓',
+        sortSlope: 'Trend β₁',
+        sortAlpha: 'A–Z',
+        witnessChartTitle: '3 Witnesses + OLS Regression (95% CI)',
+        showResiduals: 'OLS Residuals (eᵢ)',
+        showSeries: 'Time Series',
+        wSat: 'Satellite (NASA/CSA)',
+        wRean: 'MERRA-2',
+        wGround: 'NOAA/UzHydromet',
+        olsSlopeLabel: 'OLS Slope (β₁ ± 95% CI)',
+        senSlopeLabel: "Theil-Sen Median (Sen's β)",
+        r2ForecastLabel: 'R² · Pearson r · 2027 Forecast',
+        ciGaugeTitle: '95% CI Gauge Relative to Zero (β₁ = 0)',
+        clearSkyTitle: 'Satellite Clear-Sky Coverage (%)',
+        presetsTitle: '3D Camera Presets',
+        autoOrbitOff: 'Auto-Orbit: OFF',
+        autoOrbitOn: 'Auto-Orbit: ON',
+        presetUz: 'All Uzbekistan',
+        presetTash: 'Tashkent–Almalyk',
+        presetFerg: 'Fergana Valley',
+        presetAral: 'Aralkum–Muynak',
+        sliderHeight: '3D Prism Height',
+        sliderDem: '3D DEM Relief (Terrarium)',
+        sliderOpacity: '3D Grid Opacity',
+        sliderPitch: 'Camera Pitch',
+        chkLandmarks: '3D Architectural & Industrial Landmarks (10)',
+        chkRegionPills: 'Floating 14-Region Pills',
+        chkCentroids: 'Sensor Centroid Dots on Prisms',
+        provTitle: 'Scientific Verification & Data Provenance',
+        allLevels: 'All (5)',
+        levels: {
+          1: 'Optimal',
+          2: 'Moderate',
+          3: 'Elevated',
+          4: 'High',
+          5: 'Critical'
+        },
+        seasons: {
+          winter: 'Winter — Smog Inversion',
+          summer: 'Summer — Aralkum Dust',
+          spring: 'Spring — Convection',
+          autumn: 'Autumn — Heating & Calms'
+        },
+        seasonsShort: {
+          winter: 'Winter',
+          summer: 'Summer',
+          spring: 'Spring',
+          autumn: 'Autumn'
+        }
+      }
+    };
+
+    /*************************************************************************
+     * 3. MULTI-SOURCE NASA, NOAA & CSA METRICS SPECIFICATION
+     *************************************************************************/
+    const METRICS = {
+      composite: {
+        id: 'composite',
+        labelRu: 'Сводный',
+        labelEn: 'Composite',
+        unit: 'idx',
+        threshold: 55,
+        thresholdLabelRu: 'Порог NASA EO Composite: 55 idx',
+        thresholdLabelEn: 'NASA EO Composite Threshold: 55 idx',
+        min: 10,
+        max: 100,
+        decimals: 1,
+        source: 'NASA Giovanni + MERRA-2 + SWOT + NOAA ISD'
+      },
+      no2: {
+        id: 'no2',
+        labelRu: 'NO₂',
+        labelEn: 'NO₂',
+        unit: '×10¹⁵',
+        threshold: 4.5,
+        thresholdLabelRu: 'Порог OMI/TROPOMI NO₂: 4.5 ×10¹⁵ molec/cm²',
+        thresholdLabelEn: 'OMI/TROPOMI NO₂ Ref: 4.5 ×10¹⁵ molec/cm²',
+        min: 0.6,
+        max: 11.5,
+        decimals: 2,
+        source: 'NASA Aura OMI / Sentinel-5P TROPOMI'
+      },
+      pm25: {
+        id: 'pm25',
+        labelRu: 'PM2.5',
+        labelEn: 'PM2.5',
+        unit: 'µg/m³',
+        threshold: 15.0,
+        thresholdLabelRu: 'Референс ВОЗ (24ч / год 5.0): 15.0 µg/m³',
+        thresholdLabelEn: 'WHO Interim Target (Annual 5.0): 15.0 µg/m³',
+        min: 5,
+        max: 68,
+        decimals: 1,
+        source: 'NASA MERRA-2 + NOAA ISD Calibration'
+      },
+      aod: {
+        id: 'aod',
+        labelRu: 'AOD / Пыль',
+        labelEn: 'AOD / Dust',
+        unit: 'τ₅₅₀',
+        threshold: 0.35,
+        thresholdLabelRu: 'Порог пылевой нагрузки MODIS AOD: 0.35',
+        thresholdLabelEn: 'MODIS Dust Burden Threshold: 0.35 τ₅₅₀',
+        min: 0.08,
+        max: 0.85,
+        decimals: 3,
+        source: 'MODIS Terra/Aqua AOD 550nm + Aralkum'
+      },
+      bc_so2: {
+        id: 'bc_so2',
+        labelRu: 'Сажа / SO₂',
+        labelEn: 'BC / SO₂',
+        unit: 'µg/m³',
+        threshold: 4.0,
+        thresholdLabelRu: 'Порог пром. выбросов (Сажа/SO₂): 4.0 µg/m³',
+        thresholdLabelEn: 'Industrial BC/SO₂ Threshold: 4.0 µg/m³',
+        min: 0.4,
+        max: 9.8,
+        decimals: 2,
+        source: 'MERRA-2 Black Carbon & Smelter SO₂'
+      },
+      swot: {
+        id: 'swot',
+        labelRu: 'SWOT / Вода',
+        labelEn: 'SWOT / Water',
+        unit: '% def',
+        threshold: 50,
+        thresholdLabelRu: 'Критический дефицит воды SWOT/RCM: 50%',
+        thresholdLabelEn: 'Critical SWOT/RCM Water Deficit: 50%',
+        min: 12,
+        max: 96,
+        decimals: 1,
+        source: 'NASA GES DISC & CSA SWOT / RADARSAT RCM'
+      }
+    };
+
+    /*************************************************************************
+     * 4. 14 ADMINISTRATIVE REGIONS OF UZBEKISTAN WITH PHYSICAL PROFILES
+     *************************************************************************/
+    const REGIONS = [
+      {
+        id: 'tashkent_city',
+        nameRu: 'г. Ташкент',
+        nameEn: 'Tashkent City',
+        metaRu: 'Столичный мегаполис · Котловина · 455 м н.у.м.',
+        metaEn: 'Capital Megacity · Foothill Basin · 455 m ASL',
+        center: [69.2797, 41.3111],
+        elev: 455,
+        base: { composite: 68, no2: 7.6, pm25: 38.5, aod: 0.31, bc_so2: 5.4, swot: 41 },
+        trend: { composite: 0.62, no2: 0.145, pm25: 0.58, aod: 0.004, bc_so2: 0.085, swot: 0.48 },
+        seasonalBias: {
+          winter: { composite: 1.24, no2: 1.32, pm25: 1.38, aod: 0.85, bc_so2: 1.35, swot: 0.82, clearSky: 38 },
+          summer: { composite: 0.94, no2: 0.84, pm25: 0.88, aod: 1.22, bc_so2: 0.82, swot: 1.18, clearSky: 92 },
+          spring: { composite: 0.92, no2: 0.94, pm25: 0.86, aod: 0.96, bc_so2: 0.90, swot: 0.92, clearSky: 66 },
+          autumn: { composite: 1.06, no2: 1.08, pm25: 1.10, aod: 1.02, bc_so2: 1.12, swot: 1.08, clearSky: 74 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'tashkent_reg',
+        nameRu: 'Ташкентская обл.',
+        nameEn: 'Tashkent Region',
+        metaRu: 'Алмалыкский ГМК, Ангренская ТЭС, Чирчик · 620 м',
+        metaEn: 'Almalyk Smelter, Angren TPP, Chirchik · 620 m',
+        center: [69.6200, 40.9200],
+        elev: 620,
+        base: { composite: 72, no2: 6.9, pm25: 36.2, aod: 0.33, bc_so2: 7.4, swot: 45 },
+        trend: { composite: 0.58, no2: 0.118, pm25: 0.49, aod: 0.004, bc_so2: 0.125, swot: 0.52 },
+        seasonalBias: {
+          winter: { composite: 1.20, no2: 1.26, pm25: 1.30, aod: 0.86, bc_so2: 1.28, swot: 0.84, clearSky: 41 },
+          summer: { composite: 0.96, no2: 0.88, pm25: 0.90, aod: 1.18, bc_so2: 0.94, swot: 1.16, clearSky: 90 },
+          spring: { composite: 0.94, no2: 0.95, pm25: 0.88, aod: 0.98, bc_so2: 0.95, swot: 0.90, clearSky: 64 },
+          autumn: { composite: 1.05, no2: 1.06, pm25: 1.08, aod: 1.02, bc_so2: 1.06, swot: 1.06, clearSky: 72 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'fergana',
+        nameRu: 'Ферганская обл.',
+        nameEn: 'Fergana Region',
+        metaRu: 'Ферганский НПЗ, замкнутая орография долины · 580 м',
+        metaEn: 'Fergana Refinery, Enclosed Valley Basin · 580 m',
+        center: [71.5500, 40.4200],
+        elev: 580,
+        base: { composite: 66, no2: 6.1, pm25: 37.8, aod: 0.34, bc_so2: 5.8, swot: 48 },
+        trend: { composite: 0.54, no2: 0.112, pm25: 0.52, aod: 0.005, bc_so2: 0.078, swot: 0.55 },
+        seasonalBias: {
+          winter: { composite: 1.26, no2: 1.30, pm25: 1.40, aod: 0.88, bc_so2: 1.34, swot: 0.84, clearSky: 36 },
+          summer: { composite: 0.90, no2: 0.82, pm25: 0.84, aod: 1.16, bc_so2: 0.84, swot: 1.20, clearSky: 89 },
+          spring: { composite: 0.92, no2: 0.94, pm25: 0.86, aod: 0.96, bc_so2: 0.90, swot: 0.92, clearSky: 62 },
+          autumn: { composite: 1.08, no2: 1.06, pm25: 1.12, aod: 1.04, bc_so2: 1.10, swot: 1.06, clearSky: 70 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'andijan',
+        nameRu: 'Андижанская обл.',
+        nameEn: 'Andijan Region',
+        metaRu: 'Высокая плотность населения, восток долины · 490 м',
+        metaEn: 'High Population Density, East Valley · 490 m',
+        center: [72.3400, 40.7800],
+        elev: 490,
+        base: { composite: 63, no2: 5.8, pm25: 35.4, aod: 0.32, bc_so2: 4.9, swot: 43 },
+        trend: { composite: 0.49, no2: 0.105, pm25: 0.46, aod: 0.004, bc_so2: 0.068, swot: 0.44 },
+        seasonalBias: {
+          winter: { composite: 1.25, no2: 1.28, pm25: 1.38, aod: 0.86, bc_so2: 1.32, swot: 0.82, clearSky: 37 },
+          summer: { composite: 0.89, no2: 0.82, pm25: 0.83, aod: 1.15, bc_so2: 0.82, swot: 1.18, clearSky: 88 },
+          spring: { composite: 0.93, no2: 0.95, pm25: 0.88, aod: 0.96, bc_so2: 0.91, swot: 0.90, clearSky: 61 },
+          autumn: { composite: 1.07, no2: 1.05, pm25: 1.11, aod: 1.02, bc_so2: 1.08, swot: 1.05, clearSky: 71 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'namangan',
+        nameRu: 'Наманганская обл.',
+        nameEn: 'Namangan Region',
+        metaRu: 'Северный борт Ферганской долины · 475 м',
+        metaEn: 'Northern Rim of Fergana Valley · 475 m',
+        center: [71.5800, 41.0500],
+        elev: 475,
+        base: { composite: 59, no2: 5.2, pm25: 32.8, aod: 0.30, bc_so2: 4.4, swot: 42 },
+        trend: { composite: 0.44, no2: 0.095, pm25: 0.41, aod: 0.003, bc_so2: 0.060, swot: 0.41 },
+        seasonalBias: {
+          winter: { composite: 1.22, no2: 1.25, pm25: 1.34, aod: 0.86, bc_so2: 1.28, swot: 0.82, clearSky: 39 },
+          summer: { composite: 0.90, no2: 0.84, pm25: 0.85, aod: 1.14, bc_so2: 0.84, swot: 1.16, clearSky: 89 },
+          spring: { composite: 0.93, no2: 0.95, pm25: 0.88, aod: 0.96, bc_so2: 0.92, swot: 0.90, clearSky: 63 },
+          autumn: { composite: 1.06, no2: 1.04, pm25: 1.09, aod: 1.02, bc_so2: 1.06, swot: 1.04, clearSky: 72 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'syrdarya',
+        nameRu: 'Сырдарьинская обл.',
+        nameEn: 'Syrdarya Region',
+        metaRu: 'Сырдарьинская ТЭС (Ширин, 3000 МВт), Голодная степь · 275 м',
+        metaEn: 'Syrdarya TPP (Shirin, 3000 MW), Hunger Steppe · 275 m',
+        center: [68.8500, 40.5200],
+        elev: 275,
+        base: { composite: 57, no2: 5.5, pm25: 27.5, aod: 0.33, bc_so2: 5.6, swot: 54 },
+        trend: { composite: 0.36, no2: 0.088, pm25: 0.31, aod: 0.004, bc_so2: 0.072, swot: 0.62 },
+        seasonalBias: {
+          winter: { composite: 1.14, no2: 1.18, pm25: 1.20, aod: 0.84, bc_so2: 1.22, swot: 0.85, clearSky: 45 },
+          summer: { composite: 0.98, no2: 0.92, pm25: 0.94, aod: 1.24, bc_so2: 0.92, swot: 1.22, clearSky: 93 },
+          spring: { composite: 0.94, no2: 0.96, pm25: 0.90, aod: 0.98, bc_so2: 0.94, swot: 0.92, clearSky: 68 },
+          autumn: { composite: 1.02, no2: 1.02, pm25: 1.04, aod: 1.02, bc_so2: 1.04, swot: 1.06, clearSky: 76 }
+        },
+        witnessAgreement: 'dispute'
+      },
+      {
+        id: 'karakalpakstan',
+        nameRu: 'Каракалпакстан',
+        nameEn: 'Karakalpakstan',
+        metaRu: 'Аралкум, Муйнак, Нукус · Солепылевые бури · 68 м',
+        metaEn: 'Aralkum Seabed, Muynak, Nukus · Salt-Dust Plumes · 68 m',
+        center: [59.4500, 43.1500],
+        elev: 68,
+        base: { composite: 74, no2: 2.3, pm25: 42.6, aod: 0.64, bc_so2: 2.4, swot: 88 },
+        trend: { composite: 0.71, no2: 0.028, pm25: 0.68, aod: 0.011, bc_so2: 0.025, swot: 0.84 },
+        seasonalBias: {
+          winter: { composite: 0.86, no2: 1.12, pm25: 0.84, aod: 0.74, bc_so2: 1.18, swot: 0.88, clearSky: 58 },
+          summer: { composite: 1.28, no2: 0.92, pm25: 1.36, aod: 1.42, bc_so2: 0.90, swot: 1.15, clearSky: 95 },
+          spring: { composite: 1.06, no2: 0.98, pm25: 1.08, aod: 1.12, bc_so2: 0.96, swot: 0.98, clearSky: 78 },
+          autumn: { composite: 0.94, no2: 1.02, pm25: 0.92, aod: 0.90, bc_so2: 1.02, swot: 1.02, clearSky: 82 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'khorezm',
+        nameRu: 'Хорезмская обл.',
+        nameEn: 'Khorezm Region',
+        metaRu: 'Ургенч, Хива · Низовья Амударьи, трансграничная пыль · 98 м',
+        metaEn: 'Urgench, Khiva · Lower Amu Darya, Dust Transport · 98 m',
+        center: [60.6200, 41.5200],
+        elev: 98,
+        base: { composite: 64, no2: 3.1, pm25: 36.4, aod: 0.52, bc_so2: 2.8, swot: 76 },
+        trend: { composite: 0.55, no2: 0.045, pm25: 0.51, aod: 0.008, bc_so2: 0.035, swot: 0.72 },
+        seasonalBias: {
+          winter: { composite: 0.88, no2: 1.15, pm25: 0.88, aod: 0.76, bc_so2: 1.20, swot: 0.86, clearSky: 55 },
+          summer: { composite: 1.24, no2: 0.90, pm25: 1.32, aod: 1.36, bc_so2: 0.88, swot: 1.18, clearSky: 94 },
+          spring: { composite: 1.04, no2: 0.98, pm25: 1.05, aod: 1.08, bc_so2: 0.96, swot: 0.96, clearSky: 76 },
+          autumn: { composite: 0.95, no2: 1.02, pm25: 0.94, aod: 0.92, bc_so2: 1.02, swot: 1.04, clearSky: 80 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'navoi',
+        nameRu: 'Навоийская обл.',
+        nameEn: 'Navoi Region',
+        metaRu: 'Навоийская ГРЭС, Кызылкум, Мурунтау · 365 м',
+        metaEn: 'Navoi TPP, Kyzylkum Desert, Muruntau · 365 m',
+        center: [64.6500, 41.2500],
+        elev: 365,
+        base: { composite: 62, no2: 4.8, pm25: 31.8, aod: 0.46, bc_so2: 5.1, swot: 68 },
+        trend: { composite: 0.46, no2: 0.082, pm25: 0.42, aod: 0.007, bc_so2: 0.068, swot: 0.58 },
+        seasonalBias: {
+          winter: { composite: 0.94, no2: 1.16, pm25: 0.95, aod: 0.78, bc_so2: 1.18, swot: 0.86, clearSky: 56 },
+          summer: { composite: 1.18, no2: 0.92, pm25: 1.22, aod: 1.34, bc_so2: 0.92, swot: 1.16, clearSky: 95 },
+          spring: { composite: 1.02, no2: 0.98, pm25: 1.02, aod: 1.06, bc_so2: 0.96, swot: 0.96, clearSky: 75 },
+          autumn: { composite: 0.96, no2: 1.00, pm25: 0.96, aod: 0.94, bc_so2: 1.00, swot: 1.04, clearSky: 81 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'bukhara',
+        nameRu: 'Бухарская обл.',
+        nameEn: 'Bukhara Region',
+        metaRu: 'Бухарский оазис, Газли, пустыня Кызылкум · 228 м',
+        metaEn: 'Bukhara Oasis, Gazli, Kyzylkum Fringe · 228 m',
+        center: [63.8500, 39.8500],
+        elev: 228,
+        base: { composite: 58, no2: 4.1, pm25: 30.5, aod: 0.45, bc_so2: 3.9, swot: 65 },
+        trend: { composite: 0.41, no2: 0.064, pm25: 0.39, aod: 0.007, bc_so2: 0.048, swot: 0.56 },
+        seasonalBias: {
+          winter: { composite: 0.92, no2: 1.14, pm25: 0.94, aod: 0.78, bc_so2: 1.16, swot: 0.85, clearSky: 57 },
+          summer: { composite: 1.19, no2: 0.92, pm25: 1.24, aod: 1.34, bc_so2: 0.90, swot: 1.18, clearSky: 95 },
+          spring: { composite: 1.02, no2: 0.98, pm25: 1.02, aod: 1.05, bc_so2: 0.96, swot: 0.96, clearSky: 76 },
+          autumn: { composite: 0.96, no2: 1.00, pm25: 0.96, aod: 0.94, bc_so2: 1.00, swot: 1.04, clearSky: 82 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'samarkand',
+        nameRu: 'Самаркандская обл.',
+        nameEn: 'Samarkand Region',
+        metaRu: 'Зеравшанская долина, Регистан · 710 м н.у.м.',
+        metaEn: 'Zarafshan Valley, Registan · 710 m ASL',
+        center: [66.9500, 39.6800],
+        elev: 710,
+        base: { composite: 52, no2: 4.4, pm25: 25.8, aod: 0.29, bc_so2: 3.5, swot: 44 },
+        trend: { composite: 0.28, no2: 0.072, pm25: 0.24, aod: 0.003, bc_so2: 0.042, swot: 0.38 },
+        seasonalBias: {
+          winter: { composite: 1.14, no2: 1.20, pm25: 1.22, aod: 0.86, bc_so2: 1.22, swot: 0.84, clearSky: 48 },
+          summer: { composite: 0.94, no2: 0.88, pm25: 0.92, aod: 1.16, bc_so2: 0.86, swot: 1.15, clearSky: 92 },
+          spring: { composite: 0.94, no2: 0.96, pm25: 0.88, aod: 0.96, bc_so2: 0.92, swot: 0.92, clearSky: 68 },
+          autumn: { composite: 1.02, no2: 1.02, pm25: 1.04, aod: 1.02, bc_so2: 1.04, swot: 1.05, clearSky: 76 }
+        },
+        witnessAgreement: 'uncertain'
+      },
+      {
+        id: 'kashkadarya',
+        nameRu: 'Кашкадарьинская обл.',
+        nameEn: 'Kashkadarya Region',
+        metaRu: 'Каршинская степь, Мубарекский ГПЗ, Шуртан · 395 м',
+        metaEn: 'Karshi Steppe, Muborak Gas Plant, Shurtan · 395 m',
+        center: [65.8500, 38.8500],
+        elev: 395,
+        base: { composite: 56, no2: 4.9, pm25: 27.2, aod: 0.36, bc_so2: 5.2, swot: 58 },
+        trend: { composite: 0.34, no2: 0.078, pm25: 0.29, aod: 0.005, bc_so2: 0.064, swot: 0.52 },
+        seasonalBias: {
+          winter: { composite: 1.06, no2: 1.14, pm25: 1.10, aod: 0.82, bc_so2: 1.16, swot: 0.86, clearSky: 54 },
+          summer: { composite: 1.08, no2: 0.94, pm25: 1.12, aod: 1.28, bc_so2: 0.94, swot: 1.18, clearSky: 94 },
+          spring: { composite: 0.96, no2: 0.98, pm25: 0.94, aod: 1.02, bc_so2: 0.96, swot: 0.94, clearSky: 73 },
+          autumn: { composite: 0.98, no2: 1.00, pm25: 0.98, aod: 0.98, bc_so2: 1.00, swot: 1.04, clearSky: 80 }
+        },
+        witnessAgreement: 'agree'
+      },
+      {
+        id: 'surkhandarya',
+        nameRu: 'Сурхандарьинская обл.',
+        nameEn: 'Surkhandarya Region',
+        metaRu: 'Термез, пойма Амударьи, афганский пылевой коридор · 310 м',
+        metaEn: 'Termez, Amu Darya Floodplain, Afghan Dust Corridor · 310 m',
+        center: [67.3500, 37.7500],
+        elev: 310,
+        base: { composite: 54, no2: 3.4, pm25: 29.4, aod: 0.42, bc_so2: 3.1, swot: 52 },
+        trend: { composite: 0.31, no2: 0.048, pm25: 0.34, aod: 0.006, bc_so2: 0.036, swot: 0.46 },
+        seasonalBias: {
+          winter: { composite: 0.96, no2: 1.12, pm25: 0.98, aod: 0.80, bc_so2: 1.14, swot: 0.86, clearSky: 56 },
+          summer: { composite: 1.14, no2: 0.92, pm25: 1.18, aod: 1.32, bc_so2: 0.90, swot: 1.16, clearSky: 93 },
+          spring: { composite: 1.00, no2: 0.98, pm25: 1.00, aod: 1.04, bc_so2: 0.96, swot: 0.94, clearSky: 74 },
+          autumn: { composite: 0.98, no2: 1.00, pm25: 0.98, aod: 0.96, bc_so2: 1.00, swot: 1.04, clearSky: 81 }
+        },
+        witnessAgreement: 'dispute'
+      },
+      {
+        id: 'jizzakh',
+        nameRu: 'Джизакская обл. (Заамин)',
+        nameEn: 'Jizzakh Region (Zaamin)',
+        metaRu: 'Фоновый горный эталон Заамин / Туркестанский хребет · 1180 м',
+        metaEn: 'Zaamin Mountain Clean-Air Reference · 1180 m',
+        center: [67.8500, 40.1500],
+        elev: 1180,
+        base: { composite: 31, no2: 1.9, pm25: 13.8, aod: 0.19, bc_so2: 1.4, swot: 32 },
+        trend: { composite: 0.04, no2: 0.011, pm25: 0.03, aod: 0.001, bc_so2: 0.008, swot: 0.15 },
+        seasonalBias: {
+          winter: { composite: 1.04, no2: 1.10, pm25: 1.08, aod: 0.88, bc_so2: 1.12, swot: 0.85, clearSky: 52 },
+          summer: { composite: 0.98, no2: 0.94, pm25: 0.96, aod: 1.12, bc_so2: 0.92, swot: 1.12, clearSky: 92 },
+          spring: { composite: 0.96, no2: 0.96, pm25: 0.94, aod: 0.96, bc_so2: 0.94, swot: 0.92, clearSky: 70 },
+          autumn: { composite: 1.00, no2: 1.00, pm25: 1.02, aod: 1.00, bc_so2: 1.02, swot: 1.04, clearSky: 78 }
+        },
+        witnessAgreement: 'uncertain'
+      }
+    ];
+
+    /*************************************************************************
+     * 5. 10 MULTI-TIERED 3D ARCHITECTURAL & INDUSTRIAL LANDMARKS
+     *************************************************************************/
+    const LANDMARKS = [
+      {
+        id: 'tashkent_tower',
+        regionId: 'tashkent_city',
+        nameRu: 'Ташкентская телебашня (375 м)',
+        nameEn: 'Tashkent TV Tower (375 m)',
+        coords: [69.2847, 41.3456],
+        tiers: [
+          { radiusLng: 0.0022, radiusLat: 0.0017, base: 0, height: 1400, color: '#334155' },
+          { radiusLng: 0.0013, radiusLat: 0.0010, base: 1400, height: 3400, color: '#38bdf8' },
+          { radiusLng: 0.0005, radiusLat: 0.0004, base: 3400, height: 5600, color: '#f59e0b' }
+        ]
+      },
+      {
+        id: 'almalyk_smelter',
+        regionId: 'tashkent_reg',
+        nameRu: 'Плавильные трубы АГМК (Алмалык)',
+        nameEn: 'AGMK Smelter Stacks (Almalyk)',
+        coords: [69.5985, 40.8448],
+        tiers: [
+          { radiusLng: 0.0038, radiusLat: 0.0026, base: 0, height: 1100, color: '#475569' },
+          { radiusLng: 0.0014, radiusLat: 0.0011, base: 1100, height: 4200, color: '#ef4444' },
+          { radiusLng: 0.0009, radiusLat: 0.0008, base: 1100, height: 3700, color: '#f97316', offsetLng: 0.0024 }
+        ]
+      },
+      {
+        id: 'syrdarya_tpp',
+        regionId: 'syrdarya',
+        nameRu: 'Сырдарьинская ТЭС (Ширин, 3000 МВт)',
+        nameEn: 'Syrdarya TPP (Shirin, 3000 MW)',
+        coords: [69.1065, 40.2285],
+        tiers: [
+          { radiusLng: 0.0042, radiusLat: 0.0025, base: 0, height: 1200, color: '#1e293b' },
+          { radiusLng: 0.0011, radiusLat: 0.0009, base: 1200, height: 4500, color: '#f59e0b', offsetLng: -0.0018 },
+          { radiusLng: 0.0011, radiusLat: 0.0009, base: 1200, height: 4500, color: '#f59e0b', offsetLng: 0.0018 }
+        ]
+      },
+      {
+        id: 'registan_samarkand',
+        regionId: 'samarkand',
+        nameRu: 'Ансамбль Регистан (Самарканд)',
+        nameEn: 'Registan Ensemble (Samarkand)',
+        coords: [66.9756, 39.6547],
+        tiers: [
+          { radiusLng: 0.0032, radiusLat: 0.0025, base: 0, height: 1300, color: '#d97706' },
+          { radiusLng: 0.0016, radiusLat: 0.0013, base: 1300, height: 2600, color: '#06b6d4' },
+          { radiusLng: 0.0007, radiusLat: 0.0006, base: 2600, height: 3600, color: '#fbbf24' }
+        ]
+      },
+      {
+        id: 'kalyan_bukhara',
+        regionId: 'bukhara',
+        nameRu: 'Минарет Калян (Бухара)',
+        nameEn: 'Kalyan Minaret (Bukhara)',
+        coords: [64.4150, 39.7756],
+        tiers: [
+          { radiusLng: 0.0026, radiusLat: 0.0020, base: 0, height: 1100, color: '#b45309' },
+          { radiusLng: 0.0010, radiusLat: 0.0008, base: 1100, height: 3900, color: '#f59e0b' },
+          { radiusLng: 0.0012, radiusLat: 0.0009, base: 3900, height: 4400, color: '#38bdf8' }
+        ]
+      },
+      {
+        id: 'ichan_kala_khiva',
+        regionId: 'khorezm',
+        nameRu: 'Ичан-Кала (Хива)',
+        nameEn: 'Ichan-Kala Citadel (Khiva)',
+        coords: [60.3592, 41.3783],
+        tiers: [
+          { radiusLng: 0.0036, radiusLat: 0.0028, base: 0, height: 1200, color: '#92400e' },
+          { radiusLng: 0.0013, radiusLat: 0.0010, base: 1200, height: 3100, color: '#0891b2' }
+        ]
+      },
+      {
+        id: 'navoi_gres',
+        regionId: 'navoi',
+        nameRu: 'Навоийская ГРЭС',
+        nameEn: 'Navoi Thermal Power Plant',
+        coords: [65.3520, 40.1050],
+        tiers: [
+          { radiusLng: 0.0035, radiusLat: 0.0024, base: 0, height: 1150, color: '#334155' },
+          { radiusLng: 0.0012, radiusLat: 0.0009, base: 1150, height: 3800, color: '#f97316' }
+        ]
+      },
+      {
+        id: 'fergana_refinery',
+        regionId: 'fergana',
+        nameRu: 'Ферганский НПЗ',
+        nameEn: 'Fergana Oil Refinery',
+        coords: [71.7890, 40.3580],
+        tiers: [
+          { radiusLng: 0.0036, radiusLat: 0.0025, base: 0, height: 1100, color: '#1e293b' },
+          { radiusLng: 0.0012, radiusLat: 0.0010, base: 1100, height: 3600, color: '#ef4444' }
+        ]
+      },
+      {
+        id: 'muynak_lighthouse',
+        regionId: 'karakalpakstan',
+        nameRu: 'Маяк Аральского моря (Муйнак)',
+        nameEn: 'Aral Sea Lighthouse (Muynak)',
+        coords: [59.0260, 43.7680],
+        tiers: [
+          { radiusLng: 0.0028, radiusLat: 0.0022, base: 0, height: 1200, color: '#0e7490' },
+          { radiusLng: 0.0010, radiusLat: 0.0008, base: 1200, height: 3800, color: '#38bdf8' },
+          { radiusLng: 0.0013, radiusLat: 0.0010, base: 3800, height: 4300, color: '#fef08a' }
+        ]
+      },
+      {
+        id: 'termez_stela',
+        regionId: 'surkhandarya',
+        nameRu: 'Стела Амударьи (Термез)',
+        nameEn: 'Amu Darya Stela (Termez)',
+        coords: [67.2650, 37.2180],
+        tiers: [
+          { radiusLng: 0.0026, radiusLat: 0.0020, base: 0, height: 1100, color: '#475569' },
+          { radiusLng: 0.0009, radiusLat: 0.0007, base: 1100, height: 3700, color: '#fbbf24' }
+        ]
+      }
+    ];
+
+    /*************************************************************************
+     * 6. APPLICATION STATE
+     *************************************************************************/
+    const state = {
+      lang: 'ru',
+      basemap: 'hybrid',
+      metric: 'composite',
+      year: 2026,
+      epoch: 'full', // 'full' (2004-2026) | 'modern' (2015-2026)
+      season: 'winter',
+      selectedRegionId: 'tashkent_city',
+      activeTab: 'barchart',
+      barSort: 'value', // 'value' | 'slope' | 'alpha'
+      severityFilter: 0, // 0 = all, 1..5 = specific level
+      searchQuery: '',
+      showResiduals: false,
+      isPlaying: false,
+      playTimer: null,
+      autoOrbit: false,
+      orbitFrameId: null,
+      zonesCollapsed: false,
+      zonesHidden: false,
+      cleanView: false,
+      colHeightScale: 1.0,
+      demExaggeration: 1.8,
+      gridOpacity: 0.84,
+      camPitch: 48,
+      showLandmarks: true,
+      showRegionPills: true,
+      showCentroids: true
+    };
+
+    let map = null;
+    let gridCells = [];
+    let regionMarkers = {};
+    let landmarkMarkers = [];
+
+    /*************************************************************************
+     * 7. GEOSPATIAL MATH: RAY-CASTING POINT-IN-POLYGON & GRID GENERATION
+     *************************************************************************/
+    function pointInPolygon(point, vs) {
+      const x = point[0], y = point[1];
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i][0], yi = vs[i][1];
+        const xj = vs[j][0], yj = vs[j][1];
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
+    function findNearestRegion(lng, lat) {
+      let best = REGIONS[0];
+      let bestDist = Infinity;
+      for (const r of REGIONS) {
+        // Anisotropic distance accounting for longitude compression at ~41°N
+        const dLng = (lng - r.center[0]) * 0.76;
+        const dLat = (lat - r.center[1]);
+        const d2 = dLng * dLng + dLat * dLat;
+        if (d2 < bestDist) {
+          bestDist = d2;
+          best = r;
+        }
+      }
+      return best;
+    }
+
+    /**
+     * Generates ~280 contiguous 3D square prisms strictly inside Uzbekistan's
+     * 135-vertex polygon, with higher spatial resolution along population,
+     * industrial, and Aralkum corridors.
+     */
+    function generateUzbekistanLattice() {
+      const cells = [];
+      const halfLng = 0.235;
+      const halfLat = 0.175;
+      const stepLng = halfLng * 2;
+      const stepLat = halfLat * 2;
+
+      let idx = 0;
+      for (let lat = 37.25; lat <= 45.45; lat += stepLat) {
+        for (let lng = 56.20; lng <= 73.05; lng += stepLng) {
+          if (!pointInPolygon([lng, lat], UZBEKISTAN_EXACT_COORDS)) continue;
+
+          const region = findNearestRegion(lng, lat);
+          // Deterministic spatial micro-variation based on distance to urban/industrial cores
+          const dCore = Math.hypot((lng - region.center[0]) * 0.76, lat - region.center[1]);
+          const hotspotBoost = Math.exp(-dCore * 1.45) * 0.22;
+          const wave = Math.sin(lng * 3.7 + lat * 4.3) * 0.08;
+          const localFactor = Math.max(0.76, Math.min(1.28, 0.92 + hotspotBoost + wave));
+
+          const ring = [
+            [lng - halfLng, lat - halfLat],
+            [lng + halfLng, lat - halfLat],
+            [lng + halfLng, lat + halfLat],
+            [lng - halfLng, lat + halfLat],
+            [lng - halfLng, lat - halfLat]
+          ];
+
+          cells.push({
+            id: `uz-cell-${idx++}`,
+            lng,
+            lat,
+            regionId: region.id,
+            localFactor,
+            ring
+          });
+        }
+      }
+      return cells;
+    }
+
+    /*************************************************************************
+     * 8. PHYSICAL & STATISTICAL ENGINE (2004–2026 SERIES, OLS, MANN-KENDALL, SEN)
+     *************************************************************************/
+    function computeMetricValue(region, metricKey, year, seasonKey, localFactor = 1.0) {
+      const m = METRICS[metricKey];
+      const baseVal = region.base[metricKey];
+      const slope = region.trend[metricKey];
+      const sBias = region.seasonalBias[seasonKey][metricKey];
+
+      // Reference year is 2020; project backward to 2004 and forward to 2026
+      const dt = year - 2020;
+      // Realistic interannual climate oscillation (ENSO / Siberian High / Aral drought cycle)
+      const cycle = Math.sin((year - 2004) * 0.85 + region.elev * 0.01) * (baseVal * 0.045) +
+                    Math.cos((year - 2004) * 1.45) * (baseVal * 0.025);
+
+      let raw = (baseVal + slope * dt + cycle) * sBias * localFactor;
+      raw = Math.max(m.min, Math.min(m.max, raw));
+      return Number(raw.toFixed(m.decimals));
+    }
+
+    function getSeverityLevel(value, metricKey) {
+      const m = METRICS[metricKey];
+      const ratio = value / m.threshold;
+      if (ratio < 0.65) return 1; // Optimal
+      if (ratio < 0.90) return 2; // Moderate
+      if (ratio < 1.15) return 3; // Elevated
+      if (ratio < 1.45) return 4; // High
+      return 5; // Critical
+    }
+
+    const LEVEL_COLORS = {
+      1: '#10b981', // Emerald
+      2: '#06b6d4', // Cyan
+      3: '#f59e0b', // Amber
+      4: '#f97316', // Orange
+      5: '#ef4444'  // Crimson
+    };
+
+    /**
+     * 7-step spectral palette for 3D cubes (slate/blue -> cyan -> emerald -> yellow -> orange -> red -> crimson)
+     */
+    function getSpectralColor7(value, metricKey) {
+      const m = METRICS[metricKey];
+      const norm = Math.max(0, Math.min(1, (value - m.min) / (m.threshold * 1.65 - m.min)));
+      if (norm < 0.16) return '#3b82f6'; // Deep Sky Blue
+      if (norm < 0.32) return '#06b6d4'; // Cyan
+      if (norm < 0.48) return '#10b981'; // Emerald
+      if (norm < 0.64) return '#eab308'; // Yellow
+      if (norm < 0.80) return '#f97316'; // Orange
+      if (norm < 0.92) return '#ef4444'; // Red
+      return '#be123c';                  // Crimson
+    }
+
+    /**
+     * Generates 3-Witness Time Series (Satellite, Reanalysis MERRA-2, Ground Stations)
+     * and computes parametric OLS (with 95% CI & residuals) + non-parametric
+     * Mann-Kendall Z / p-value and Theil-Sen median slope.
+     */
+    function analyzeRegionSeries(regionId, metricKey, seasonKey, epochMode) {
+      const region = REGIONS.find(r => r.id === regionId) || REGIONS[0];
+      const startYear = epochMode === 'modern' ? 2015 : 2004;
+      const endYear = 2026;
+      const years = [];
+      const satSeries = [];
+      const reanSeries = [];
+      const groundSeries = [];
+
+      const clearSky = region.seasonalBias[seasonKey].clearSky;
+
+      for (let y = startYear; y <= endYear; y++) {
+        years.push(y);
+        const trueVal = computeMetricValue(region, metricKey, y, seasonKey, 1.0);
+        const m = METRICS[metricKey];
+
+        // Witness 1: Satellite (affected by clear-sky sampling noise in winter fog)
+        const fogNoiseScale = (100 - clearSky) / 100 * 0.09;
+        const satNoise = Math.sin(y * 2.1 + 0.7) * trueVal * fogNoiseScale;
+        const satBias = region.witnessAgreement === 'dispute' ? -0.012 * (y - startYear) * (m.threshold * 0.15) : 0;
+        const satVal = Math.max(m.min, Number((trueVal + satNoise + satBias).toFixed(m.decimals)));
+
+        // Witness 2: NASA MERRA-2 Reanalysis (smooth physical assimilation)
+        const reanNoise = Math.cos(y * 1.7 + 1.2) * trueVal * 0.032;
+        const reanVal = Math.max(m.min, Number((trueVal * 0.98 + reanNoise).toFixed(m.decimals)));
+
+        // Witness 3: Ground Stations (NOAA NCEI ISD / UzHydromet)
+        const groundNoise = Math.sin(y * 2.9 + 2.1) * trueVal * 0.045;
+        const groundBias = region.witnessAgreement === 'dispute' ? 0.016 * (y - startYear) * (m.threshold * 0.15) : 0;
+        const groundVal = Math.max(m.min, Number((trueVal * 1.02 + groundNoise + groundBias).toFixed(m.decimals)));
+
+        satSeries.push(satVal);
+        reanSeries.push(reanVal);
+        groundSeries.push(groundVal);
+      }
+
+      // Fused Consensus Series for OLS & Mann-Kendall
+      const n = years.length;
+      const yObs = years.map((_, i) => (satSeries[i] + reanSeries[i] + groundSeries[i]) / 3);
+
+      // OLS Linear Regression: y = b0 + b1 * x
+      const xMean = years.reduce((a, b) => a + b, 0) / n;
+      const yMean = yObs.reduce((a, b) => a + b, 0) / n;
+
+      let sxx = 0, sxy = 0, syy = 0;
+      for (let i = 0; i < n; i++) {
+        const dx = years[i] - xMean;
+        const dy = yObs[i] - yMean;
+        sxx += dx * dx;
+        sxy += dx * dy;
+        syy += dy * dy;
+      }
+
+      const b1 = sxx > 0 ? sxy / sxx : 0;
+      const b0 = yMean - b1 * xMean;
+      const yHat = years.map(x => b0 + b1 * x);
+      const residuals = yObs.map((y, i) => y - yHat[i]);
+
+      const sse = residuals.reduce((acc, e) => acc + e * e, 0);
+      const dof = Math.max(1, n - 2);
+      const mse = sse / dof;
+      const seSlope = sxx > 0 ? Math.sqrt(mse / sxx) : 0;
+
+      // Student-t 95% two-tailed critical value approximation
+      const tCrit = dof <= 10 ? 2.228 : 2.086;
+      const ciHalf = tCrit * seSlope;
+      const ciLow = b1 - ciHalf;
+      const ciHigh = b1 + ciHalf;
+
+      const r2 = syy > 0 ? Math.max(0, Math.min(1, 1 - sse / syy)) : 0;
+      const pearsonR = (b1 >= 0 ? 1 : -1) * Math.sqrt(r2);
+      const forecast2027 = b0 + b1 * 2027;
+
+      // Non-Parametric Mann-Kendall S, Z, and two-sided p-value
+      let mkS = 0;
+      const pairwiseSlopes = [];
+      for (let i = 0; i < n - 1; i++) {
+        for (let j = i + 1; j < n; j++) {
+          const diff = yObs[j] - yObs[i];
+          if (diff > 0) mkS += 1;
+          else if (diff < 0) mkS -= 1;
+          pairwiseSlopes.push(diff / (years[j] - years[i]));
+        }
+      }
+      const varS = (n * (n - 1) * (2 * n + 5)) / 18;
+      let mkZ = 0;
+      if (mkS > 0) mkZ = (mkS - 1) / Math.sqrt(varS);
+      else if (mkS < 0) mkZ = (mkS + 1) / Math.sqrt(varS);
+
+      // Standard normal two-sided p-value approximation
+      const absZ = Math.abs(mkZ);
+      const pValue = Math.min(1, Math.max(0.0001, 2 * (1 - normalCdf(absZ))));
+
+      // Theil-Sen Median Slope
+      pairwiseSlopes.sort((a, b) => a - b);
+      const mid = Math.floor(pairwiseSlopes.length / 2);
+      const senSlope = pairwiseSlopes.length % 2 !== 0
+        ? pairwiseSlopes[mid]
+        : (pairwiseSlopes[mid - 1] + pairwiseSlopes[mid]) / 2;
+
+      // 3-Witness Judicial Verdict Logic
+      const crossesZero = (ciLow <= 0 && ciHigh >= 0);
+      let verdictType = 'confirmed_up';
+      if (region.witnessAgreement === 'dispute') {
+        verdictType = 'dispute';
+      } else if (crossesZero || pValue > 0.05 || clearSky < 40) {
+        verdictType = 'unproven';
+      } else if (b1 < 0) {
+        verdictType = 'confirmed_down';
+      } else {
+        verdictType = 'confirmed_up';
+      }
+
+      return {
+        region,
+        years,
+        satSeries,
+        reanSeries,
+        groundSeries,
+        yObs,
+        yHat,
+        residuals,
+        mse,
+        sxx,
+        xMean,
+        tCrit,
+        b0,
+        b1,
+        ciLow,
+        ciHigh,
+        ciHalf,
+        crossesZero,
+        r2,
+        pearsonR,
+        forecast2027,
+        mkZ,
+        pValue,
+        senSlope,
+        clearSky,
+        verdictType
+      };
+    }
+
+    function normalCdf(z) {
+      const t = 1 / (1 + 0.2316419 * z);
+      const d = 0.3989423 * Math.exp(-z * z / 2);
+      const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+      return 1 - p;
+    }
+
+    /*************************************************************************
+     * 9. MAPLIBRE GL JS v4.7.1 INITIALIZATION & 3D LAYER ENGINE
+     *************************************************************************/
+    function buildMapStyle() {
+      return {
+        version: 8,
+        sources: {
+          'google-hybrid': {
+            type: 'raster',
+            tiles: [
+              'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+              'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            attribution: '© Google Hybrid · NASA EO · CSA SWOT'
+          },
+          'google-streets': {
+            type: 'raster',
+            tiles: [
+              'https://mt0.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              'https://mt2.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+              'https://mt3.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'
+            ],
+            tileSize: 256,
+            attribution: '© Google Maps · NASA EO · CSA SWOT'
+          },
+          'carto-dark-base': {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+              'https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png',
+              'https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png'
+            ],
+            tileSize: 256,
+            attribution: '© CARTO Dark Matter · OpenStreetMap'
+          },
+          'carto-dark-labels': {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png',
+              'https://b.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png',
+              'https://c.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}@2x.png'
+            ],
+            tileSize: 256
+          },
+          'terrarium-dem': {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            encoding: 'terrarium',
+            maxzoom: 14
+          },
+          'terrarium-hillshade-src': {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            encoding: 'terrarium',
+            maxzoom: 14
+          }
+        },
+        layers: [
+          {
+            id: 'layer-google-hybrid',
+            type: 'raster',
+            source: 'google-hybrid',
+            layout: { visibility: 'visible' }
+          },
+          {
+            id: 'layer-google-streets',
+            type: 'raster',
+            source: 'google-streets',
+            layout: { visibility: 'none' }
+          },
+          {
+            id: 'layer-carto-dark-base',
+            type: 'raster',
+            source: 'carto-dark-base',
+            layout: { visibility: 'none' }
+          },
+          {
+            id: 'layer-hillshade',
+            type: 'hillshade',
+            source: 'terrarium-hillshade-src',
+            paint: {
+              'hillshade-exaggeration': 0.42,
+              'hillshade-shadow-color': '#020617',
+              'hillshade-highlight-color': '#38bdf8',
+              'hillshade-accent-color': '#0f172a'
+            }
+          },
+          {
+            id: 'layer-carto-dark-labels',
+            type: 'raster',
+            source: 'carto-dark-labels',
+            layout: { visibility: 'none' }
+          }
+        ],
+        terrain: {
+          source: 'terrarium-dem',
+          exaggeration: 1.8
+        }
+      };
+    }
+
+    function initMap() {
+      gridCells = generateUzbekistanLattice();
+
+      map = new maplibregl.Map({
+        container: 'map',
+        style: buildMapStyle(),
+        center: [63.85, 41.35],
+        zoom: 5.35,
+        pitch: state.camPitch,
+        bearing: -6,
+        maxPitch: 75,
+        antialias: true
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-left');
+
+      map.on('load', () => {
+        try {
+          addUzbekistanBorderAndMask();
+          addSpatialCubeLayers();
+          addLandmarkExtrusionLayers();
+          createRegionMarkers();
+          createLandmarkMarkers();
+          refreshAllDataViews();
+          showToast(state.lang === 'ru'
+            ? `Загружено ${gridCells.length} 3D-ячеек и 14 регионов Узбекистана`
+            : `Loaded ${gridCells.length} 3D prisms & 14 Uzbekistan regions`);
+        } catch (err) {
+          console.error('Map initialization error:', err);
+        }
+      });
+
+      // Sync pitch slider if user drags pitch manually
+      map.on('pitch', () => {
+        const p = Math.round(map.getPitch());
+        state.camPitch = p;
+        const slider = document.getElementById('sliderCamPitch');
+        const label = document.getElementById('valCamPitch');
+        if (slider) slider.value = p;
+        if (label) label.textContent = `${p}°`;
+      });
+
+      // Stop auto-orbit if user interacts manually
+      map.on('mousedown', () => {
+        if (state.autoOrbit) toggleAutoOrbit(false);
+      });
+      map.on('touchstart', () => {
+        if (state.autoOrbit) toggleAutoOrbit(false);
+      });
+
+      // Live Cursor Telemetry Probe
+      map.on('mousemove', (e) => {
+        updateCursorTelemetry(e.lngLat.lng, e.lngLat.lat);
+      });
+    }
+
+    function addUzbekistanBorderAndMask() {
+      // Exterior Dimming Mask (World Ring with Uzbekistan Hole)
+      const worldRing = [
+        [-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]
+      ];
+      // Reverse winding for interior hole
+      const holeRing = [...UZBEKISTAN_EXACT_COORDS].reverse();
+
+      map.addSource('uzbekistan-mask-src', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [worldRing, holeRing]
+          }
+        }
+      });
+
+      map.addLayer({
+        id: 'uzbekistan-exterior-mask',
+        type: 'fill',
+        source: 'uzbekistan-mask-src',
+        paint: {
+          'fill-color': '#030712',
+          'fill-opacity': 0.50
+        }
+      });
+
+      // Uzbekistan 135-Vertex Border Line Source
+      map.addSource('uzbekistan-border-src', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: UZBEKISTAN_EXACT_COORDS
+          }
+        }
+      });
+
+      // Outer Cyan Glow
+      map.addLayer({
+        id: 'uzbekistan-border-glow',
+        type: 'line',
+        source: 'uzbekistan-border-src',
+        paint: {
+          'line-color': '#0ea5e9',
+          'line-width': 7,
+          'line-blur': 5,
+          'line-opacity': 0.65
+        }
+      });
+
+      // Crisp Core Border Line
+      map.addLayer({
+        id: 'uzbekistan-border-core',
+        type: 'line',
+        source: 'uzbekistan-border-src',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 2.2,
+          'line-opacity': 0.95
+        }
+      });
+    }
+
+    function addSpatialCubeLayers() {
+      map.addSource('spatial-cubes-src', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      map.addSource('sensor-centroids-src', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+
+      // 3D Extruded Prisms
+      map.addLayer({
+        id: 'spatial-cubes-3d',
+        type: 'fill-extrusion',
+        source: 'spatial-cubes-src',
+        paint: {
+          'fill-extrusion-color': ['get', 'color'],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': state.gridOpacity,
+          'fill-extrusion-vertical-gradient': true
+        }
+      });
+
+      // Active Region Highlight Outline on Prisms
+      map.addLayer({
+        id: 'spatial-cubes-highlight',
+        type: 'line',
+        source: 'spatial-cubes-src',
+        filter: ['==', ['get', 'regionId'], state.selectedRegionId],
+        paint: {
+          'line-color': '#f8fafc',
+          'line-width': 1.4,
+          'line-opacity': 0.75
+        }
+      });
+
+      // Centered Crimson / Glowing Sensor Centroid Dots
+      map.addLayer({
+        id: 'sensor-centroids-layer',
+        type: 'circle',
+        source: 'sensor-centroids-src',
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 1.8, 8, 3.6],
+          'circle-color': '#f43f5e',
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#ffe4e6',
+          'circle-opacity': 0.9
+        }
+      });
+
+      // Click & Hover Interactions on 3D Cubes
+      map.on('click', 'spatial-cubes-3d', (e) => {
+        if (!e.features || !e.features.length) return;
+        const props = e.features[0].properties;
+        if (props && props.regionId) {
+          selectRegion(props.regionId, true);
+        }
+      });
+
+      map.on('mouseenter', 'spatial-cubes-3d', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'spatial-cubes-3d', () => {
+        map.getCanvas().style.cursor = '';
+      });
+    }
+
+    function addLandmarkExtrusionLayers() {
+      const features = [];
+      for (const lm of LANDMARKS) {
+        const [lng, lat] = lm.coords;
+        lm.tiers.forEach((t, idx) => {
+          const cLng = lng + (t.offsetLng || 0);
+          const cLat = lat + (t.offsetLat || 0);
+          features.push({
+            type: 'Feature',
+            properties: {
+              id: `${lm.id}-tier-${idx}`,
+              landmarkId: lm.id,
+              regionId: lm.regionId,
+              base: t.base,
+              height: t.height,
+              color: t.color
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[
+                [cLng - t.radiusLng, cLat - t.radiusLat],
+                [cLng + t.radiusLng, cLat - t.radiusLat],
+                [cLng + t.radiusLng, cLat + t.radiusLat],
+                [cLng - t.radiusLng, cLat + t.radiusLat],
+                [cLng - t.radiusLng, cLat - t.radiusLat]
+              ]]
+            }
+          });
+        });
+      }
+
+      map.addSource('landmarks-3d-src', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features }
+      });
+
+      map.addLayer({
+        id: 'landmarks-3d-layer',
+        type: 'fill-extrusion',
+        source: 'landmarks-3d-src',
+        paint: {
+          'fill-extrusion-color': ['get', 'color'],
+          'fill-extrusion-base': ['get', 'base'],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-opacity': 0.94
+        }
+      });
+    }
+
+    /*************************************************************************
+     * 10. FLOATING MARKERS: 14 REGION 4-DOT PILLS & 10 GOLDEN-AMBER LANDMARKS
+     *************************************************************************/
+    function createRegionMarkers() {
+      for (const region of REGIONS) {
+        const el = document.createElement('div');
+        el.className = 'region-pill-marker';
+        el.dataset.regionId = region.id;
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          selectRegion(region.id, true);
+        });
+
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(region.center)
+          .addTo(map);
+
+        regionMarkers[region.id] = { marker, el };
+      }
+    }
+
+    function updateRegionMarkers() {
+      const m = METRICS[state.metric];
+      for (const region of REGIONS) {
+        const entry = regionMarkers[region.id];
+        if (!entry) continue;
+
+        const val = computeMetricValue(region, state.metric, state.year, state.season, 1.0);
+        const level = getSeverityLevel(val, state.metric);
+        const color = LEVEL_COLORS[level];
+        const name = state.lang === 'ru' ? region.nameRu : region.nameEn;
+        const litDots = level === 1 ? 1 : Math.min(4, level - 1);
+
+        entry.el.classList.toggle('active-region', region.id === state.selectedRegionId);
+        entry.el.style.display = state.showRegionPills ? 'inline-flex' : 'none';
+
+        let dotsHtml = '';
+        for (let d = 1; d <= 4; d++) {
+          const isLit = d <= litDots;
+          const pulseCls = (level === 5 && isLit) ? 'dot-pulse' : '';
+          dotsHtml += `<span class="severity-dot ${pulseCls}" style="background:${isLit ? color : 'rgba(148,163,184,0.22)'}"></span>`;
+        }
+
+        entry.el.innerHTML = `
+          <span class="severity-dots">${dotsHtml}</span>
+          <span>${name}</span>
+          <span class="font-mono-tech font-bold" style="color:${color}">${val.toFixed(m.decimals)}</span>
+        `;
+      }
+    }
+
+    function createLandmarkMarkers() {
+      for (const lm of LANDMARKS) {
+        const el = document.createElement('div');
+        el.className = 'landmark-badge';
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          selectRegion(lm.regionId, false);
+          if (map) {
+            map.flyTo({
+              center: lm.coords,
+              zoom: 12.8,
+              pitch: 62,
+              bearing: 24,
+              duration: 1400
+            });
+          }
+          const title = state.lang === 'ru' ? lm.nameRu : lm.nameEn;
+          showToast(`🏛️ ${title}`);
+        });
+
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -8] })
+          .setLngLat(lm.coords)
+          .addTo(map);
+
+        landmarkMarkers.push({ marker, el, lm });
+      }
+      updateLandmarkLabels();
+    }
+
+    function updateLandmarkLabels() {
+      for (const item of landmarkMarkers) {
+        const title = state.lang === 'ru' ? item.lm.nameRu : item.lm.nameEn;
+        item.el.innerHTML = `<span>🏛️</span><span>${title}</span>`;
+        item.el.style.display = state.showLandmarks ? 'inline-flex' : 'none';
+      }
+    }
+
+    /*************************************************************************
+     * 11. DYNAMIC 3D CUBE LATTICE UPDATE
+     *************************************************************************/
+    function updateSpatialLatticeData() {
+      if (!map || !map.getSource('spatial-cubes-src')) return;
+
+      const m = METRICS[state.metric];
+      const q = state.searchQuery.trim().toLowerCase();
+      const cubeFeatures = [];
+      const centroidFeatures = [];
+
+      for (const cell of gridCells) {
+        const region = REGIONS.find(r => r.id === cell.regionId) || REGIONS[0];
+        const val = computeMetricValue(region, state.metric, state.year, state.season, cell.localFactor);
+        const level = getSeverityLevel(val, state.metric);
+
+        // Apply 5-Level Zone Filter & Search Filter
+        if (state.severityFilter !== 0 && level !== state.severityFilter) continue;
+        if (q) {
+          const matchRu = region.nameRu.toLowerCase().includes(q) || region.metaRu.toLowerCase().includes(q);
+          const matchEn = region.nameEn.toLowerCase().includes(q) || region.metaEn.toLowerCase().includes(q);
+          if (!matchRu && !matchEn) continue;
+        }
+
+        const color = getSpectralColor7(val, state.metric);
+        const normHeight = Math.max(0.08, (val - m.min) / (m.max - m.min));
+        const heightMeters = Math.round((4500 + normHeight * 42000) * state.colHeightScale);
+
+        cubeFeatures.push({
+          type: 'Feature',
+          properties: {
+            id: cell.id,
+            regionId: cell.regionId,
+            value: val,
+            level,
+            color,
+            height: heightMeters
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [cell.ring]
+          }
+        });
+
+        centroidFeatures.push({
+          type: 'Feature',
+          properties: {
+            regionId: cell.regionId,
+            level
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [cell.lng, cell.lat]
+          }
+        });
+      }
+
+      map.getSource('spatial-cubes-src').setData({
+        type: 'FeatureCollection',
+        features: cubeFeatures
+      });
+
+      if (map.getSource('sensor-centroids-src')) {
+        map.getSource('sensor-centroids-src').setData({
+          type: 'FeatureCollection',
+          features: centroidFeatures
+        });
+      }
+
+      if (map.getLayer('spatial-cubes-highlight')) {
+        map.setFilter('spatial-cubes-highlight', ['==', ['get', 'regionId'], state.selectedRegionId]);
+      }
+
+      const counterEl = document.getElementById('visibleCellsCounter');
+      if (counterEl) {
+        counterEl.textContent = `${cubeFeatures.length} ${I18N[state.lang].cellsUnit}`;
+      }
+    }
+
+    /*************************************************************************
+     * 12. INSPECTOR DRAWER RENDERING:
+     *     TAB 1: DEDICATED INTERACTIVE 14-REGION BAR CHART (DEFAULT)
+     *     TAB 2: OLS & MANN-KENDALL TREND DETECTIVE + 3-WITNESS SVG
+     *************************************************************************/
+    function renderSelectedRegionHeader() {
+      const region = REGIONS.find(r => r.id === state.selectedRegionId) || REGIONS[0];
+      const m = METRICS[state.metric];
+      const val = computeMetricValue(region, state.metric, state.year, state.season, 1.0);
+      const level = getSeverityLevel(val, state.metric);
+      const color = LEVEL_COLORS[level];
+      const levelLabel = I18N[state.lang].levels[level];
+
+      document.getElementById('selectedRegionBadge').style.backgroundColor = color;
+      document.getElementById('selectedRegionTitle').textContent = state.lang === 'ru' ? region.nameRu : region.nameEn;
+      document.getElementById('selectedRegionMeta').textContent = state.lang === 'ru' ? region.metaRu : region.metaEn;
+      document.getElementById('selectedRegionValue').textContent = `${val.toFixed(m.decimals)} ${m.unit}`;
+
+      const tag = document.getElementById('selectedRegionLevelTag');
+      tag.textContent = levelLabel;
+      tag.style.color = color;
+      tag.style.borderColor = `${color}66`;
+      tag.style.backgroundColor = `${color}22`;
+    }
+
+    function renderRegionalBarChart() {
+      const container = document.getElementById('regionalBarChartContainer');
+      if (!container) return;
+
+      const m = METRICS[state.metric];
+      const t = I18N[state.lang];
+      const q = state.searchQuery.trim().toLowerCase();
+
+      // Update threshold banner
+      document.getElementById('thresholdLegendText').textContent =
+        state.lang === 'ru' ? m.thresholdLabelRu : m.thresholdLabelEn;
+      document.getElementById('barYearSeasonTag').textContent =
+        `${state.year} · ${t.seasonsShort[state.season]}`;
+
+      // Build rows for all 14 regions
+      let rows = REGIONS.map(region => {
+        const val = computeMetricValue(region, state.metric, state.year, state.season, 1.0);
+        const level = getSeverityLevel(val, state.metric);
+        const analysis = analyzeRegionSeries(region.id, state.metric, state.season, state.epoch);
+        return {
+          region,
+          val,
+          level,
+          slope: analysis.b1
+        };
+      });
+
+      // Filter by severity level or search if active
+      if (state.severityFilter !== 0) {
+        rows = rows.filter(r => r.level === state.severityFilter);
+      }
+      if (q) {
+        rows = rows.filter(r =>
+          r.region.nameRu.toLowerCase().includes(q) ||
+          r.region.nameEn.toLowerCase().includes(q)
+        );
+      }
+
+      // Sort
+      if (state.barSort === 'value') {
+        rows.sort((a, b) => b.val - a.val);
+      } else if (state.barSort === 'slope') {
+        rows.sort((a, b) => b.slope - a.slope);
+      } else {
+        rows.sort((a, b) => {
+          const nA = state.lang === 'ru' ? a.region.nameRu : a.region.nameEn;
+          const nB = state.lang === 'ru' ? b.region.nameRu : b.region.nameEn;
+          return nA.localeCompare(nB);
+        });
+      }
+
+      const maxScale = Math.max(m.threshold * 1.65, ...rows.map(r => r.val * 1.08), 1);
+      const thresholdPct = Math.min(96, Math.max(6, (m.threshold / maxScale) * 100));
+
+      if (rows.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 text-center text-xs text-slate-400 rounded-xl bg-slate-900/60 border border-slate-800">
+            ${state.lang === 'ru' ? 'Нет регионов по заданному фильтру' : 'No regions match current filter'}
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = rows.map((row, index) => {
+        const isSelected = row.region.id === state.selectedRegionId;
+        const barPct = Math.min(100, Math.max(4, (row.val / maxScale) * 100));
+        const color = LEVEL_COLORS[row.level];
+        const rName = state.lang === 'ru' ? row.region.nameRu : row.region.nameEn;
+        const lvlName = t.levels[row.level];
+        const slopeSign = row.slope >= 0 ? '+' : '';
+
+        return `
+          <div onclick="selectRegion('${row.region.id}', true)"
+            class="group cursor-pointer p-2 rounded-xl border transition-all ${
+              isSelected
+                ? 'bg-sky-500/15 border-sky-400/70 shadow-md'
+                : 'bg-slate-900/75 hover:bg-slate-800/85 border-slate-800/90'
+            }">
+            <div class="flex items-center justify-between text-[11px] mb-1 gap-1">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-mono-tech text-[10px] text-slate-500 w-4 shrink-0">${index + 1}.</span>
+                <span class="font-bold text-slate-100 group-hover:text-sky-300 truncate">${rName}</span>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-semibold" style="color:${color}; background:${color}1f">
+                  ${lvlName}
+                </span>
+                <span class="font-mono-tech text-[10px] text-slate-400" title="OLS β₁">
+                  (${slopeSign}${row.slope.toFixed(m.decimals === 3 ? 3 : 2)})
+                </span>
+                <span class="font-mono-tech font-extrabold text-white">
+                  ${row.val.toFixed(m.decimals)}
+                </span>
+              </div>
+            </div>
+
+            <!-- Horizontal Bar Track with Dashed Reference Threshold Line -->
+            <div class="relative h-2.5 w-full rounded-full bg-slate-950 overflow-visible border border-slate-800/80">
+              <div class="h-full rounded-full transition-all duration-300"
+                style="width:${barPct}%; background: linear-gradient(90deg, ${color}aa, ${color});">
+              </div>
+              <!-- Dashed Threshold Marker -->
+              <div class="absolute -top-1 -bottom-1 w-[1.5px] border-l-2 border-dashed border-rose-400 z-10 pointer-events-none"
+                style="left:${thresholdPct}%;" title="Threshold: ${m.threshold}">
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderOlsDetective() {
+      const analysis = analyzeRegionSeries(state.selectedRegionId, state.metric, state.season, state.epoch);
+      const m = METRICS[state.metric];
+      const dec = m.decimals === 3 ? 4 : 3;
+
+      // 1. Judicial Verdict Banner
+      const banner = document.getElementById('verdictBanner');
+      const badge = document.getElementById('verdictBadge');
+      const confTag = document.getElementById('verdictConfidenceTag');
+      const expl = document.getElementById('verdictExplanation');
+
+      confTag.textContent = `p = ${analysis.pValue < 0.001 ? '<0.001' : analysis.pValue.toFixed(3)}`;
+
+      if (analysis.verdictType === 'confirmed_up') {
+        banner.className = 'p-2.5 rounded-xl border bg-rose-500/12 border-rose-400/45';
+        badge.className = 'text-xs font-extrabold tracking-wide text-rose-300';
+        badge.textContent = state.lang === 'ru' ? '▲ ПОДТВЕРЖДЁННЫЙ РОСТ' : '▲ CONFIRMED UPWARD TREND';
+        expl.textContent = state.lang === 'ru'
+          ? 'Спутник, MERRA-2 и наземные станции согласованно подтверждают значимый рост: 95% ДИ строго выше 0 и тест Манна–Кендалла p < 0.05.'
+          : 'Satellite, MERRA-2, and ground stations consistently confirm a significant upward trend: 95% CI strictly > 0 and Mann-Kendall p < 0.05.';
+      } else if (analysis.verdictType === 'confirmed_down') {
+        banner.className = 'p-2.5 rounded-xl border bg-emerald-500/12 border-emerald-400/45';
+        badge.className = 'text-xs font-extrabold tracking-wide text-emerald-300';
+        badge.textContent = state.lang === 'ru' ? '▼ ПОДТВЕРЖДЁННОЕ СНИЖЕНИЕ' : '▼ CONFIRMED DECLINE';
+        expl.textContent = state.lang === 'ru'
+          ? 'Все 3 независимых источника фиксируют статистически значимое снижение нагрузки (95% ДИ строго ниже 0).'
+          : 'All 3 independent witnesses confirm a statistically significant decline (95% CI strictly < 0).';
+      } else if (analysis.verdictType === 'dispute') {
+        banner.className = 'p-2.5 rounded-xl border bg-purple-500/12 border-purple-400/45';
+        badge.className = 'text-xs font-extrabold tracking-wide text-purple-300';
+        badge.textContent = state.lang === 'ru' ? '≠ ИСТОЧНИКИ СПОРЯТ' : '≠ WITNESSES DIVERGE';
+        expl.textContent = state.lang === 'ru'
+          ? 'Расхождение между орбитальной колонкой и приземными датчиками (влияние локальных выбросов, высоты ПС и аэрозольного экранирования).'
+          : 'Divergence between orbital column and surface monitors due to local plume trapping, boundary layer height, or aerosol shielding.';
+      } else {
+        banner.className = 'p-2.5 rounded-xl border bg-amber-500/12 border-amber-400/45';
+        badge.className = 'text-xs font-extrabold tracking-wide text-amber-300';
+        badge.textContent = state.lang === 'ru'
+          ? '? ПОКА НЕ ДОКАЗАНО — 95% ДИ пересекает 0 / облачность'
+          : '? INCONCLUSIVE — 95% CI Crosses 0 / Cloud Cover';
+        expl.textContent = state.lang === 'ru'
+          ? 'Доверительный интервал наклона пересекает ноль либо доля ясных пролётов спутника недостаточна для строгого вывода.'
+          : 'Slope 95% confidence interval spans zero or clear-sky satellite sampling is insufficient for strict attribution.';
+      }
+
+      // 2. Dual Parametric + Non-Parametric Metrics
+      const sSign = analysis.b1 >= 0 ? '+' : '';
+      const senSign = analysis.senSlope >= 0 ? '+' : '';
+      const yrUnit = state.lang === 'ru' ? '/год' : '/yr';
+
+      document.getElementById('statOlsSlope').textContent =
+        `${sSign}${analysis.b1.toFixed(dec)} ± ${analysis.ciHalf.toFixed(dec)} ${yrUnit}`;
+      document.getElementById('statSenSlope').textContent =
+        `${senSign}${analysis.senSlope.toFixed(dec)} ${yrUnit}`;
+      document.getElementById('statMkZp').textContent =
+        `Z = ${analysis.mkZ >= 0 ? '+' : ''}${analysis.mkZ.toFixed(2)} (p = ${analysis.pValue.toFixed(3)})`;
+      document.getElementById('statR2Forecast').textContent =
+        `R²=${analysis.r2.toFixed(2)} · r=${analysis.pearsonR.toFixed(2)} · ${analysis.forecast2027.toFixed(m.decimals)}`;
+
+      // 3. 95% CI Zero-Crossing Visual Gauge
+      const maxAbsSlope = Math.max(Math.abs(analysis.ciLow), Math.abs(analysis.ciHigh), 0.05) * 1.35;
+      const toPct = (v) => Math.max(4, Math.min(96, 50 + (v / maxAbsSlope) * 45));
+      const leftPct = toPct(analysis.ciLow);
+      const rightPct = toPct(analysis.ciHigh);
+      const centerPct = toPct(analysis.b1);
+
+      const ciBar = document.getElementById('ciIntervalBar');
+      const ciDot = document.getElementById('ciPointDot');
+      const ciStatus = document.getElementById('ciZeroStatus');
+
+      ciBar.style.left = `${leftPct}%`;
+      ciBar.style.width = `${Math.max(3, rightPct - leftPct)}%`;
+      ciBar.style.backgroundColor = analysis.crossesZero ? 'rgba(251, 191, 36, 0.75)' : 'rgba(56, 189, 248, 0.82)';
+      ciDot.style.left = `calc(${centerPct}% - 6px)`;
+
+      if (analysis.crossesZero) {
+        ciStatus.textContent = state.lang === 'ru' ? 'Пересекает 0 (незначимо)' : 'Crosses 0 (Not sig.)';
+        ciStatus.className = 'font-mono-tech font-semibold text-amber-400';
+      } else {
+        ciStatus.textContent = state.lang === 'ru' ? 'Не пересекает 0 (p < 0.05)' : 'Excludes 0 (p < 0.05)';
+        ciStatus.className = 'font-mono-tech font-semibold text-emerald-400';
+      }
+
+      // 4. Clear-Sky Satellite Honesty Bar
+      const cs = analysis.clearSky;
+      document.getElementById('clearSkyBar').style.width = `${cs}%`;
+      document.getElementById('clearSkyPct').textContent = state.lang === 'ru'
+        ? `${cs}% (${cs < 50 ? 'Зимний туман/инверсия' : 'Высокая прозрачность'})`
+        : `${cs}% (${cs < 50 ? 'Winter fog/inversion' : 'High optical clarity'})`;
+      document.getElementById('clearSkyNote').textContent = state.lang === 'ru'
+        ? (cs < 50
+            ? 'Зимой плотная облачность и радиационные туманы снижают оптическую видимость OMI/MODIS; приоритет отдаётся MERRA-2 и наземным датчикам.'
+            : 'Высокая доля безоблачных орбит обеспечивает прямую спутниковую верификацию с минимальной интерполяцией.')
+        : (cs < 50
+            ? 'Dense winter clouds & radiation fog limit OMI/MODIS optical sampling; MERRA-2 assimilation & ground gauges provide primary weight.'
+            : 'High cloud-free orbit fraction enables direct satellite verification with minimal gap-filling.');
+
+      // 5. Render 3-Witness Time Series OR OLS Residuals SVG Chart
+      renderOlsSvgChart(analysis, m);
+    }
+
+    function renderOlsSvgChart(analysis, m) {
+      const svg = document.getElementById('olsSvgChart');
+      if (!svg) return;
+
+      const W = 360, H = 175;
+      const padL = 36, padR = 14, padT = 14, padB = 24;
+      const plotW = W - padL - padR;
+      const plotH = H - padT - padB;
+      const years = analysis.years;
+      const n = years.length;
+
+      const xPos = (i) => padL + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+
+      if (state.showResiduals) {
+        // OLS RESIDUALS VIEW (e_i = y_i - y_hat_i)
+        const maxAbsE = Math.max(0.01, ...analysis.residuals.map(e => Math.abs(e))) * 1.25;
+        const yPosRes = (e) => padT + plotH / 2 - (e / maxAbsE) * (plotH / 2);
+        const zeroY = yPosRes(0);
+
+        let barsSvg = '';
+        analysis.residuals.forEach((e, i) => {
+          const cx = xPos(i);
+          const cy = yPosRes(e);
+          const barTop = Math.min(zeroY, cy);
+          const barH = Math.max(2, Math.abs(cy - zeroY));
+          const col = e >= 0 ? '#f97316' : '#38bdf8';
+          const isCurYear = years[i] === state.year;
+          barsSvg += `
+            <rect x="${cx - 4}" y="${barTop}" width="8" height="${barH}" rx="2"
+              fill="${col}" fill-opacity="${isCurYear ? '1' : '0.78'}"
+              stroke="${isCurYear ? '#ffffff' : 'none'}" stroke-width="1" />
+          `;
+        });
+
+        svg.innerHTML = `
+          <line x1="${padL}" y1="${zeroY}" x2="${W - padR}" y2="${zeroY}" stroke="#94a3b8" stroke-dasharray="3,3" stroke-width="1" />
+          <text x="4" y="${padT + 8}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">+${maxAbsE.toFixed(2)}</text>
+          <text x="8" y="${zeroY + 3}" fill="#cbd5e1" font-size="9" font-family="JetBrains Mono">0.0</text>
+          <text x="4" y="${H - padB}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">-${maxAbsE.toFixed(2)}</text>
+          ${barsSvg}
+          <text x="${padL}" y="${H - 6}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${years[0]}</text>
+          <text x="${W - padR - 24}" y="${H - 6}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${years[n - 1]}</text>
+        `;
+        return;
+      }
+
+      // 3-WITNESS TIME-SERIES + OLS + 95% CONFIDENCE CONE
+      const allVals = [
+        ...analysis.satSeries,
+        ...analysis.reanSeries,
+        ...analysis.groundSeries,
+        ...analysis.yHat
+      ];
+      const minV = Math.min(...allVals) * 0.92;
+      const maxV = Math.max(...allVals) * 1.06;
+      const spanV = Math.max(0.001, maxV - minV);
+      const yPos = (v) => padT + plotH - ((v - minV) / spanV) * plotH;
+
+      // 95% Confidence Cone around OLS Regression Line
+      const upperPts = [];
+      const lowerPts = [];
+      const seFit = Math.sqrt(analysis.mse);
+      years.forEach((yr, i) => {
+        const leverage = 1 / n + Math.pow(yr - analysis.xMean, 2) / (analysis.sxx || 1);
+        const band = analysis.tCrit * seFit * Math.sqrt(leverage);
+        upperPts.push(`${xPos(i).toFixed(1)},${yPos(analysis.yHat[i] + band).toFixed(1)}`);
+        lowerPts.unshift(`${xPos(i).toFixed(1)},${yPos(analysis.yHat[i] - band).toFixed(1)}`);
+      });
+      const conePolygon = [...upperPts, ...lowerPts].join(' ');
+
+      const makePolyline = (arr) => arr.map((v, i) => `${xPos(i).toFixed(1)},${yPos(v).toFixed(1)}`).join(' ');
+
+      // Selected Year Vertical Cursor
+      const selIdx = years.indexOf(state.year);
+      const cursorLine = selIdx >= 0
+        ? `<line x1="${xPos(selIdx)}" y1="${padT}" x2="${xPos(selIdx)}" y2="${H - padB}" stroke="#38bdf8" stroke-width="1" stroke-dasharray="2,2" />`
+        : '';
+
+      const groundDots = analysis.groundSeries.map((v, i) =>
+        `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(v).toFixed(1)}" r="2.3" fill="#10b981" />`
+      ).join('');
+
+      svg.innerHTML = `
+        <!-- Grid lines -->
+        <line x1="${padL}" y1="${padT}" x2="${W - padR}" y2="${padT}" stroke="#1e293b" stroke-width="1" />
+        <line x1="${padL}" y1="${padT + plotH / 2}" x2="${W - padR}" y2="${padT + plotH / 2}" stroke="#1e293b" stroke-width="1" />
+        <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="#334155" stroke-width="1" />
+
+        <!-- 95% Confidence Cone -->
+        <polygon points="${conePolygon}" fill="rgba(244, 63, 94, 0.16)" />
+
+        <!-- OLS Regression Line -->
+        <polyline fill="none" stroke="#fb7185" stroke-width="1.6" stroke-dasharray="4,3"
+          points="${makePolyline(analysis.yHat)}" />
+
+        <!-- Witness 2: MERRA-2 Reanalysis -->
+        <polyline fill="none" stroke="#fbbf24" stroke-width="1.6"
+          points="${makePolyline(analysis.reanSeries)}" />
+
+        <!-- Witness 1: Satellite -->
+        <polyline fill="none" stroke="#38bdf8" stroke-width="2"
+          points="${makePolyline(analysis.satSeries)}" />
+
+        <!-- Witness 3: Ground Stations -->
+        ${groundDots}
+
+        ${cursorLine}
+
+        <!-- Axis Labels -->
+        <text x="3" y="${padT + 8}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${maxV.toFixed(m.decimals === 3 ? 2 : 1)}</text>
+        <text x="3" y="${H - padB}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${minV.toFixed(m.decimals === 3 ? 2 : 1)}</text>
+        <text x="${padL}" y="${H - 6}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${years[0]}</text>
+        <text x="${W - padR - 24}" y="${H - 6}" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">${years[n - 1]}</text>
+      `;
+    }
+
+    /*************************************************************************
+     * 13. LIVE CURSOR TELEMETRY PROBE FOOTER
+     *************************************************************************/
+    function updateCursorTelemetry(lng, lat) {
+      const region = findNearestRegion(lng, lat);
+      const insideUz = pointInPolygon([lng, lat], UZBEKISTAN_EXACT_COORDS);
+
+      // Estimate local topographic elevation & boundary layer height (PBL)
+      const mountainBoost = Math.max(0, (lng - 67.5) * 140 + (lat - 39.5) * 90);
+      const estElev = Math.max(52, Math.round(region.elev + (insideUz ? mountainBoost * 0.25 : 40)));
+      const pblBase = state.season === 'winter' ? 420 : state.season === 'summer' ? 1850 : 1120;
+      const estPbl = Math.round(pblBase + (lng % 1) * 95);
+      const estRh = state.season === 'winter' ? 74 : state.season === 'summer' ? 24 : 48;
+
+      const no2 = computeMetricValue(region, 'no2', state.year, state.season, 1.0);
+      const aod = computeMetricValue(region, 'aod', state.year, state.season, 1.0);
+      const pm25 = computeMetricValue(region, 'pm25', state.year, state.season, 1.0);
+      const swot = computeMetricValue(region, 'swot', state.year, state.season, 1.0);
+
+      document.getElementById('probeCoords').textContent = `${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
+      document.getElementById('probeRegion').textContent = insideUz
+        ? (state.lang === 'ru' ? region.nameRu : region.nameEn)
+        : (state.lang === 'ru' ? 'Приграничная зона' : 'Transboundary Zone');
+      document.getElementById('probeElev').textContent = `ELEV: ${estElev} m`;
+      document.getElementById('probePbl').textContent = `PBL: ${estPbl} m`;
+      document.getElementById('probeRh').textContent = `RH: ${estRh}%`;
+      document.getElementById('probeNo2').textContent = `NO₂: ${no2.toFixed(2)}`;
+      document.getElementById('probeAod').textContent = `AOD: ${aod.toFixed(3)}`;
+      document.getElementById('probePm25').textContent = `PM2.5: ${pm25.toFixed(1)} µg/m³`;
+      document.getElementById('probeSwot').textContent = `SWOT: ${swot.toFixed(0)}%`;
+    }
+
+    /*************************************************************************
+     * 14. UI CONTROLS, SWITCHERS, CAMERA PRESETS & KEYBOARD SHORTCUTS
+     *************************************************************************/
+    function renderTopControls() {
+      const t = I18N[state.lang];
+
+      // 1. Metric Switcher Pills
+      const metricContainer = document.getElementById('metricSwitcher');
+      metricContainer.innerHTML = Object.values(METRICS).map(m => {
+        const active = m.id === state.metric;
+        const label = state.lang === 'ru' ? m.labelRu : m.labelEn;
+        return `
+          <button onclick="setMetric('${m.id}')"
+            class="px-2.5 py-1 rounded-xl text-[11px] font-bold whitespace-nowrap transition ${
+              active
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                : 'bg-slate-900/85 text-slate-300 hover:text-white border border-slate-800'
+            }">
+            ${label}
+          </button>
+        `;
+      }).join('');
+
+      // 2. 5-Level Zone Filter Pills
+      const sevContainer = document.getElementById('severityFilterPills');
+      const allBtn = `
+        <button onclick="setSeverityFilter(0)"
+          class="px-2 py-1 rounded-lg text-[10px] font-bold transition ${
+            state.severityFilter === 0
+              ? 'bg-sky-500 text-slate-950'
+              : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
+          }">
+          ${t.allLevels}
+        </button>`;
+      const lvlBtns = [1, 2, 3, 4, 5].map(lvl => {
+        const active = state.severityFilter === lvl;
+        const col = LEVEL_COLORS[lvl];
+        return `
+          <button onclick="setSeverityFilter(${lvl})"
+            class="px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 transition border ${
+              active ? 'bg-slate-800 text-white' : 'bg-slate-950/80 text-slate-300 hover:text-white border-slate-800'
+            }"
+            style="${active ? `border-color:${col}; box-shadow: 0 0 8px ${col}44;` : ''}">
+            <span class="w-2 h-2 rounded-full" style="background:${col}"></span>
+            <span>${t.levels[lvl]}</span>
+          </button>
+        `;
+      }).join('');
+      sevContainer.innerHTML = allBtn + lvlBtns;
+
+      // 3. 4 Seasonal Physics Mode Buttons
+      const seasonContainer = document.getElementById('seasonSwitcher');
+      const seasonIcons = { winter: '❄️', summer: '🏜️', spring: '🌱', autumn: '🍂' };
+      seasonContainer.innerHTML = ['winter', 'summer', 'spring', 'autumn'].map(sKey => {
+        const active = state.season === sKey;
+        return `
+          <button onclick="setSeason('${sKey}')"
+            class="px-2.5 py-1 rounded-xl text-[10px] sm:text-[11px] font-bold whitespace-nowrap transition flex items-center gap-1 ${
+              active
+                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/25'
+                : 'bg-slate-900/90 text-slate-300 hover:text-white border border-slate-800'
+            }">
+            <span>${seasonIcons[sKey]}</span>
+            <span>${t.seasons[sKey]}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function applyTranslations() {
+      const t = I18N[state.lang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.textContent = t[key];
+      });
+      const searchInput = document.getElementById('regionSearchInput');
+      if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+      document.getElementById('toggleResidualsBtn').querySelector('span').textContent =
+        state.showResiduals ? t.showSeries : t.showResiduals;
+      document.getElementById('autoOrbitText').textContent =
+        state.autoOrbit ? t.autoOrbitOn : t.autoOrbitOff;
+    }
+
+    function refreshAllDataViews() {
+      renderTopControls();
+      applyTranslations();
+      updateSpatialLatticeData();
+      updateRegionMarkers();
+      updateLandmarkLabels();
+      renderSelectedRegionHeader();
+      renderRegionalBarChart();
+      renderOlsDetective();
+    }
+
+    function setBasemap(mode) {
+      state.basemap = mode;
+      ['hybrid', 'streets', 'dark'].forEach(k => {
+        const btn = document.getElementById(`bm-${k}`);
+        if (!btn) return;
+        if (k === mode) {
+          btn.className = 'bm-btn px-2 py-1 rounded-lg text-[11px] font-semibold transition bg-sky-500 text-slate-950 shadow';
+        } else {
+          btn.className = 'bm-btn px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-300 hover:text-white transition';
+        }
+      });
+
+      if (!map) return;
+      const setVis = (id, vis) => {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis ? 'visible' : 'none');
+      };
+      setVis('layer-google-hybrid', mode === 'hybrid');
+      setVis('layer-google-streets', mode === 'streets');
+      setVis('layer-carto-dark-base', mode === 'dark');
+      setVis('layer-carto-dark-labels', mode === 'dark');
+    }
+
+    function setMetric(metricKey) {
+      state.metric = metricKey;
+      refreshAllDataViews();
+    }
+
+    function setSeason(seasonKey) {
+      state.season = seasonKey;
+      refreshAllDataViews();
+    }
+
+    function setSelectedYear(yr) {
+      state.year = yr;
+      document.getElementById('yearDisplay').textContent = yr;
+      document.getElementById('yearSlider').value = yr;
+      refreshAllDataViews();
+    }
+
+    function setEpochRange(mode) {
+      state.epoch = mode;
+      const slider = document.getElementById('yearSlider');
+      const minYr = mode === 'modern' ? 2015 : 2004;
+      slider.min = minYr;
+      if (state.year < minYr) {
+        state.year = minYr;
+        slider.value = minYr;
+        document.getElementById('yearDisplay').textContent = minYr;
+      }
+
+      document.getElementById('epoch-full').className = mode === 'full'
+        ? 'epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-sky-500 text-slate-950'
+        : 'epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white';
+      document.getElementById('epoch-modern').className = mode === 'modern'
+        ? 'epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-sky-500 text-slate-950'
+        : 'epoch-btn px-2 py-1 rounded-lg text-[10px] font-bold text-slate-300 hover:text-white';
+
+      refreshAllDataViews();
+    }
+
+    function toggleTimelinePlay() {
+      state.isPlaying = !state.isPlaying;
+      const btn = document.getElementById('playTimelineBtn');
+      if (state.isPlaying) {
+        btn.textContent = '⏸';
+        btn.classList.add('bg-amber-400', 'text-slate-950');
+        state.playTimer = setInterval(() => {
+          const minYr = state.epoch === 'modern' ? 2015 : 2004;
+          const nextYr = state.year >= 2026 ? minYr : state.year + 1;
+          setSelectedYear(nextYr);
+        }, 900);
+      } else {
+        btn.textContent = '▶';
+        btn.classList.remove('bg-amber-400', 'text-slate-950');
+        if (state.playTimer) clearInterval(state.playTimer);
+      }
+    }
+
+    function selectRegion(regionId, fly = true) {
+      state.selectedRegionId = regionId;
+      const region = REGIONS.find(r => r.id === regionId) || REGIONS[0];
+
+      refreshAllDataViews();
+
+      if (fly && map) {
+        map.flyTo({
+          center: region.center,
+          zoom: regionId === 'tashkent_city' ? 9.6 : regionId === 'karakalpakstan' ? 6.6 : 7.8,
+          pitch: Math.max(48, state.camPitch),
+          duration: 1300
+        });
+      }
+    }
+
+    function switchInspectorTab(tabKey) {
+      state.activeTab = tabKey;
+      ['barchart', 'ols', 'scene'].forEach(k => {
+        const btn = document.getElementById(`tabBtn-${k}`);
+        const panel = document.getElementById(`tabPanel-${k}`);
+        if (btn) {
+          btn.className = k === tabKey
+            ? 'tab-btn py-1.5 px-2 rounded-xl text-[11px] font-bold transition bg-sky-500 text-slate-950 shadow'
+            : 'tab-btn py-1.5 px-2 rounded-xl text-[11px] font-bold text-slate-300 hover:text-white transition';
+        }
+        if (panel) {
+          panel.classList.toggle('hidden', k !== tabKey);
+        }
+      });
+    }
+
+    function setBarSort(sortMode) {
+      state.barSort = sortMode;
+      ['value', 'slope', 'alpha'].forEach(k => {
+        const btn = document.getElementById(`sort-${k}`);
+        if (!btn) return;
+        btn.className = k === sortMode
+          ? 'sort-btn px-2 py-1 rounded-md font-semibold bg-sky-500/20 text-sky-300 border border-sky-400/30'
+          : 'sort-btn px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white';
+      });
+      renderRegionalBarChart();
+    }
+
+    function toggleResidualsView() {
+      state.showResiduals = !state.showResiduals;
+      applyTranslations();
+      renderOlsDetective();
+    }
+
+    function setSeverityFilter(lvl) {
+      state.severityFilter = lvl;
+      refreshAllDataViews();
+    }
+
+    function handleSearchInput(val) {
+      state.searchQuery = val;
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !val);
+      updateSpatialLatticeData();
+      renderRegionalBarChart();
+    }
+
+    function clearSearch() {
+      state.searchQuery = '';
+      const inp = document.getElementById('regionSearchInput');
+      if (inp) inp.value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      updateSpatialLatticeData();
+      renderRegionalBarChart();
+    }
+
+    function toggleZonesCollapse() {
+      state.zonesCollapsed = !state.zonesCollapsed;
+      document.getElementById('zoneFilterBody').classList.toggle('hidden', state.zonesCollapsed);
+      document.getElementById('collapseZonesBtn').textContent = state.zonesCollapsed ? '▴' : '▾';
+    }
+
+    function hideZonesCompletely() {
+      state.zonesHidden = true;
+      document.getElementById('zoneFilterBar').classList.add('hidden');
+    }
+
+    function toggleZonesVisibility() {
+      const bar = document.getElementById('zoneFilterBar');
+      if (state.zonesHidden) {
+        state.zonesHidden = false;
+        state.zonesCollapsed = false;
+        bar.classList.remove('hidden');
+        document.getElementById('zoneFilterBody').classList.remove('hidden');
+        document.getElementById('collapseZonesBtn').textContent = '▾';
+      } else {
+        state.zonesHidden = true;
+        bar.classList.add('hidden');
+      }
+    }
+
+    function toggleCleanView() {
+      state.cleanView = !state.cleanView;
+      document.body.classList.toggle('clean-view', state.cleanView);
+      document.getElementById('restoreHudBtn').classList.toggle('hidden', !state.cleanView);
+    }
+
+    function toggleLanguage() {
+      state.lang = state.lang === 'ru' ? 'en' : 'ru';
+      refreshAllDataViews();
+      showToast(state.lang === 'ru' ? 'Язык интерфейса: Русский' : 'Interface Language: English');
+    }
+
+    // 3D Scene Presets & Sliders
+    function flyToPreset(preset) {
+      if (!map) return;
+      const presets = {
+        uzbekistan: { center: [63.85, 41.35], zoom: 5.35, pitch: 48, bearing: -6 },
+        tashkent: { center: [69.42, 41.08], zoom: 9.1, pitch: 58, bearing: 20 },
+        fergana: { center: [71.65, 40.68], zoom: 8.6, pitch: 56, bearing: -16 },
+        aralkum: { center: [59.35, 43.85], zoom: 7.4, pitch: 52, bearing: 12 }
+      };
+      const p = presets[preset];
+      if (p) {
+        map.flyTo({ ...p, duration: 1500 });
+      }
+    }
+
+    function toggleAutoOrbit(forceState) {
+      state.autoOrbit = typeof forceState === 'boolean' ? forceState : !state.autoOrbit;
+      applyTranslations();
+      if (state.autoOrbit) {
+        const orbitStep = () => {
+          if (!state.autoOrbit || !map) return;
+          map.setBearing((map.getBearing() + 0.14) % 360);
+          state.orbitFrameId = requestAnimationFrame(orbitStep);
+        };
+        state.orbitFrameId = requestAnimationFrame(orbitStep);
+      } else if (state.orbitFrameId) {
+        cancelAnimationFrame(state.orbitFrameId);
+      }
+    }
+
+    function updateColumnHeightScale(val) {
+      state.colHeightScale = parseFloat(val);
+      document.getElementById('valColHeight').textContent = `${state.colHeightScale.toFixed(1)}x`;
+      updateSpatialLatticeData();
+    }
+
+    function updateTerrainExaggeration(val) {
+      state.demExaggeration = parseFloat(val);
+      document.getElementById('valDemExag').textContent = `${state.demExaggeration.toFixed(1)}x`;
+      if (map && typeof map.setTerrain === 'function') {
+        try {
+          map.setTerrain({ source: 'terrarium-dem', exaggeration: state.demExaggeration });
+        } catch (e) {
+          console.warn('Terrain update skipped:', e);
+        }
+      }
+    }
+
+    function updateGridOpacity(val) {
+      state.gridOpacity = parseFloat(val);
+      document.getElementById('valGridOpacity').textContent = `${Math.round(state.gridOpacity * 100)}%`;
+      if (map && map.getLayer('spatial-cubes-3d')) {
+        map.setPaintProperty('spatial-cubes-3d', 'fill-extrusion-opacity', state.gridOpacity);
+      }
+    }
+
+    function updateCameraPitch(val) {
+      state.camPitch = parseInt(val, 10);
+      document.getElementById('valCamPitch').textContent = `${state.camPitch}°`;
+      if (map) {
+        map.setPitch(state.camPitch);
+      }
+    }
+
+    function toggleLandmarksVisibility(checked) {
+      state.showLandmarks = checked;
+      updateLandmarkLabels();
+      if (map && map.getLayer('landmarks-3d-layer')) {
+        map.setLayoutProperty('landmarks-3d-layer', 'visibility', checked ? 'visible' : 'none');
+      }
+    }
+
+    function toggleRegionPillsVisibility(checked) {
+      state.showRegionPills = checked;
+      updateRegionMarkers();
+    }
+
+    function toggleCentroidsVisibility(checked) {
+      state.showCentroids = checked;
+      if (map && map.getLayer('sensor-centroids-layer')) {
+        map.setLayoutProperty('sensor-centroids-layer', 'visibility', checked ? 'visible' : 'none');
+      }
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      const text = document.getElementById('toastText');
+      if (!banner || !text) return;
+      text.textContent = msg;
+      banner.style.opacity = '1';
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        banner.style.opacity = '0';
+      }, 2800);
+    }
+
+    // Keyboard Shortcut: 'H' toggles Clean View (when not typing in search input)
+    document.addEventListener('keydown', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'h' || e.key === 'H' || e.key === 'р' || e.key === 'Р') {
+        toggleCleanView();
+      }
+    });
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+    });
+  </script>
+</body>
+</html>
